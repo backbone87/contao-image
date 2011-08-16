@@ -10,7 +10,11 @@ class Color {
 			));
 		$arrColor = str_split(strlen($arrMatches[1]) < 5 ? preg_replace('/(.)/', '$1$1', $strColor) : $arrMatches[1], 2);
 	
-		return new self(hexdec($arrColor[0]), hexdec($arrColor[1]), hexdec($arrColor[2]), $arrColor[3] ? hexdec($arrColor[0]) : 255);
+		return new self(hexdec($arrColor[0]), hexdec($arrColor[1]), hexdec($arrColor[2]), $arrColor[3] ? hexdec($arrColor[0]) : 0);
+	}
+	
+	public static function createFromAssoc($arrColor) {
+		return new self($arrColor['red'], $arrColor['green'], $arrColor['blue'], $arrColor['alpha']);
 	}
 	
 	private $intRed;
@@ -21,7 +25,7 @@ class Color {
 	
 	private $intAlpha;
 	
-	public function __construct($intRed, $intGreen, $intBlue, $intAlpha = 255) {
+	public function __construct($intRed, $intGreen, $intBlue, $intAlpha = 0) {
 		$this->intRed = max(min(round($intRed), 255), 0);
 		$this->intGreen = max(min(round($intGreen), 255), 0);
 		$this->intBlue = max(min(round($intBlue), 255), 0);
@@ -45,7 +49,7 @@ class Color {
 	}
 	
 	public function toHexString($blnAlpha = null) {
-		$blnAlpha === null && $blnAlpha = $this->intAlpha != 255;
+		$blnAlpha === null && $blnAlpha = $this->intAlpha != 0;
 		return dechex($this->intRed) . dechex($this->intGreen) . dechex($this->intBlue) . ($blnAlpha ? dechex($this->intAlpha) : '');
 	}
 	

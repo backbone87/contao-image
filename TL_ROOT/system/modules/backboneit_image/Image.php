@@ -20,22 +20,40 @@
  * @copyright backboneIT | Oliver Hoff 2010 - Alle Rechte vorbehalten. All rights reserved.
  * @author Oliver Hoff <oliver@hofff.com>
  */
-class Image {
+abstract class Image {
 
 	
 	/**
-	 * @var string
-	 * 			Image storage format types.
+	 * Image storage format types.
 	 */
 	const PNG	= 'png';
 	const JPEG	= 'jpg';
 	const GIF	= 'gif';
 	const WBMP	= 'wbmp';
 	
+	/**
+	 * Thumbnail generation modes.
+	 * 
+	 * "CROP"
+	 * Scales down the original until it matches at least one side of the
+	 * requested size and finally crops the image centrally, if needed.
+	 * 
+	 * "FILL"
+	 * Same as "CROP" but does not crops the image. Can result in a smaller area
+	 * as the requested.
+	 * 
+	 * "FIT"
+	 * Scales down the original until both sides are smaller than or equal to
+	 * the requested size. Can result in a smaller area as the requested.
+	 * 
+	 */
 	const CROP	= 0;
 	const FILL	= 1;
 	const FIT	= 2;
 	
+	/**
+	 * Positioning identifiers.
+	 */
 	const CENTER		= 1;
 	const TOPLEFT		= 2;
 	const TOPRIGHT		= 4;
@@ -66,22 +84,7 @@ class Image {
 	 * @throws InvalidArgumentException
 	 * 			If intval of $numWidth or $numHeight is less than 1.
 	 */
-	public static function createEmpty(Size $objSize) {
-		GdLib::checkLoaded();
-		$objSize->checkNonNullArea();
-		$objSize->checkAllowed();
-		
-		$resImage = @imagecreatetruecolor($objSize->getWidth(), $objSize->getHeight());
-		
-		if(!$resImage) {
-			throw new RuntimeException(sprintf(
-				'Image::createEmpty(): Failed to create empty image. Original message [%s].',
-				$php_errormsg
-			));
-		}
-		
-		return new self($resImage, $objSize);
-	}
+	public static abstract function createEmpty(Size $objSize);
     
 	/**
 	 * <p>
@@ -117,7 +120,7 @@ class Image {
 		GdLib::checkTypeSupported($strType);
 		
 		$objSize = Size::createFromFile($objFile);
-		$objSize->checkAllowed();
+		GdLib::checkSizeAllowed($objSize);
 		
 		$resImage = @call_user_func(GdLib::getCreateFunByType($strType), TL_ROOT . '/' . $objFile->value);
 		
@@ -128,7 +131,9 @@ class Image {
 			));
 		}
 		
-		return new self($resImage, $objSize);
+		$strClass = imageistruecolor($resImage) ? 'TrueColorImage' : 'PaletteImage';
+		
+		return new $strClass($resImage);
 	}
 	
 	/**
@@ -210,13 +215,7 @@ class Image {
 		
 		$objOrigSize = $objOriginal->getSize();
 		
-		if(!$objDstSize->getWidth()) {
-			$objDstSize = $objDstSize->ratiofyWidth($objOrigSize->getRatio());
-			
-		} elseif(!$objDstSize->getHeight()) {
-			$objDstSize = $objDstSize->ratiofyHeight($objOrigSize->getRatio());
-			
-		} else {
+		if($objDstSize->getArea()) {
 			switch($intMode) {
 				case self::FILL:
 					$objDstSize = $objDstSize->ratiofyUp($objOrigSize->getRatio());
@@ -232,7 +231,8 @@ class Image {
 					$objSrcPoint = $objSrcSize->centerize($objOrigSize);
 					break;
 			}
-			
+		} else {
+			$objDstSize = $objDstSize->ratiofyUp($objOrigSize->getRatio());
 		}
 		
 		$objThumb = $objOriginal->resample(
@@ -287,11 +287,15 @@ class Image {
 	 *			Ready to use for HTML output. Otherwise <tt>null</tt>.
 	 * @see Image::createThumb();
 	 */
-	public static function getThumb($objOriginal, $numWidth = null, $numHeight = null, $strMode = '', $numQuality = 90) {
+	public static function getThumb($objOriginal, $numWidth = null, $numHeight = null, $strMode = '', $numQuality = 90, $fltTolerance = 0.03) {
 		$objOriginal = self::getFile($objOriginal);
+		$objOrigSize = Size::createFromFile($objOriginal);
+		$objDstSize = new Size($numWidth, $numHeight);
+		$objDstSize->getArea() || $objDstSize = $objDstSize->ratiofyUp($objOrigSize->getRatio());
 		
-		if((!$numWidth || ($numWidth < $objOriginal->width * 1.03 && $numWidth > $objOriginal->width * 0.97))
-		&& (!$numHeight || ($numHeight < $objOriginal->height * 1.03 && $numHeight > $objOriginal->height * 0.97)))
+		if(floatval($fltTolerance) != 0
+		&& $objOrigSize->scale(1 + $fltTolerance)->wraps($objDstSize)
+		&& $objOrigSize->scale(1 - $fltTolerance)->fits($objDstSize))
 			return $objSource->value;
 		
 		$strCached = 'system/html/' . $objOriginal->filename . '-' . substr(md5('-w' . $numWidth . '-h' . $numHeight . '-' . $objOriginal->value . '-' . $strMode . '-' . $objOriginal->mtime), 0, 8) . '.' . $objOriginal->extension;
@@ -299,13 +303,16 @@ class Image {
 			return $strCached;
 	
 		switch($strMode) {
+			case self::CROP:
+			case self::FILL:		
+			case self::FIT:			break;
 			case 'proportional':	$strMode = self::FILL;	break;
 			case 'box':				$strMode = self::FIT;	break;
 			default:				$strMode = self::CROP;	break;
 		}
 		
 		try {
-			$objThumb = self::createThumb($objOriginal, $numWidth, $numHeight, $strMode);
+			$objThumb = self::createThumb($objOriginal, $objDstSize, $strMode);
 			$objThumb->store($strCached, $numQuality, true);
 		} catch(Exception $e) {
 			$strCached = $objOriginal->value;
@@ -317,60 +324,31 @@ class Image {
 	}
 	
 	protected $resImage;
+	
+	private $objSize;
 		
 	protected function __construct($resImage) {
+		if(!@imagesx($resImage))
+			throw new InvalidArgumentException('Image::__construct(): #1 $resImage is not a valid gdlib image ressource.');
+		
 		$this->resImage = $resImage;
+		$this->objSize = new Size(imagesx($resImage), imagesy($resImage)); 
 	}
 	
 	public function __destruct() {
 		@imagedestroy($this->resImage);
 	}
 	
-	/**
-	 * <p>
-	 * If $strKey is 'res' or 'resource', returns the resource-reference of the
-	 * image encapsulated by this <tt>Image</tt> object.
-	 * If $strKey is 'width', returns the width of this image.
-	 * If $strKey is 'height', returns the height of this image.
-	 * </p>
-	 * 
-	 * @param string $strKey
-	 * 			The get-key.
-	 * @return mixed
-	 * 			The particular value.
-	 */
-	public function __get($strKey) {
-		if(!$this->resImage)
-			return null;
-		
-		switch($strKey) {
-			case 'res':
-			case 'resource':
-				return $this->resImage;
-				break;
-				
-			case 'width':
-				return imagesx($this->resImage);
-				break;
-				
-			case 'height':
-				return imagesy($this->resImage);
-				break;
-				
-			case 'dim':
-			case 'size':
-				return array(imagesx($this->resImage), imagesy($this->resImage));
-				break;
-				
-			case 'ratio':
-				return imagesx($this->resImage) / imagesy($this->resImage);
-				break;
-		}
-		
-	}
-	
 	public function __toString() {
 		return '[Object: Image (' . $this->width . 'x' . $this->height . ')]';
+	}
+	
+	public function getSize() {
+		return $this->objSize;
+	}
+	
+	public function getRessource() {
+		return is_ressource($this->resImage) ? $this->resImage : null;
 	}
 	
 	/**
@@ -414,9 +392,9 @@ class Image {
 	 * 			If image-bytes could not be created.
 	 * 			If image-bytes could not be written.
 	 */
-	public function store($varFile = null, $numQuality = 90, $blnForce = true, $strType = null) {
+	public function store($varFile = null, $numQuality = 90, $blnOverwrite = true, $strType = null) {
 		if($varFile) {
-			$objFile = self::getFile($varFile, $blnForce);
+			$objFile = self::getFile($varFile, $blnOverwrite);
 			if(!$strType) { $strType = $objFile->extension; }
 		}
 		
@@ -428,7 +406,7 @@ class Image {
 		$funStore = self::$funStore[$strType];
 		
 		ob_start();
-		if(!@$funStore($this->resImage, null, $strType == self::WBMP ? null : intval($numQuality))) {
+		if(!@call_user_func(GdLib::getStoreFunByType($strType), $this->resImage, null, $strType == self::WBMP ? null : intval($numQuality))) {
 			ob_end_clean();
 			throw new Exception(sprintf(
 				'Image->store(): Failed to create image data, given format [%s]. Original message [%s].',
@@ -453,36 +431,6 @@ class Image {
 		}
 		
 		return $binImage;
-	}
-	
-	public function isValidArea(array &$arrDim, array &$arrPoint = array(0, 0)) {
-		$arrDim[0] = intval($arrDim[0]);
-		$arrDim[1] = intval($arrDim[1]);
-		$arrPoint[0] = intval($arrPoint[0]);
-		$arrPoint[1] = intval($arrPoint[1]);
-			
-		if($arrDim[0] < 1
-		|| $arrDim[1] < 1
-		|| $arrPoint[0] < 0
-		|| $arrPoint[1] < 0
-		|| $arrDim[0] + $arrPoint[0] > $this->width
-		|| $arrDim[1] + $arrPoint[1] > $this->height) {
-			return false;
-		}
-	
-		return true;
-	}
-	
-	public function isValidPoint(array &$arrPoint) {
-		$arrPoint[0] = intval($arrPoint[0]);
-		$arrPoint[1] = intval($arrPoint[1]);
-		
-		if($arrPoint[0] < 0 || $arrPoint[1] < 0
-		|| $arrPoint[0] >= $this->width || $arrPoint[1] >= $this->height) {
-			return false;
-		}
-		
-		return true;
 	}
 	
 	public function watermark($objWatermark, $intPosition = self::BOTTOMLEFT, $fltSize = 0.5) {
@@ -525,56 +473,37 @@ class Image {
 	}
 	
 	public function resample(
-			Image $objTarget	= null,
-			array $arrDstSize	= null,
-			array $arrDstPoint	= null,
-			array $arrSrcSize	= null,
-			array $arrSrcPoint	= null,
-			$blnAlphaBlending	= false) {
+			Image $objTarget		= null,
+			Size $objDstSize		= null,
+			Point2D $objDstPoint	= null,
+			Size $objSrcSize		= null,
+			Point2D $objSrcPoint	= null,
+			$blnAlphaBlending		= false) {
 		
-		if(!$arrSrcPoint) { $arrSrcPoint = array(0, 0); }
-		if(!$arrSrcSize) { $arrSrcSize = array($this->width - $arrSrcPoint[0], $this->height - $arrSrcPoint[1]); }
+		$objSrcPoint || $objSrcPoint = new Point2D(0, 0);
+		$objSrcSize || $objSrcSize = Size::createFromPoint($this->getSize()->toPoint()->subtract($objSrcPoint));
 		
-		if(!$this->isValidArea($arrSrcSize, $arrSrcPoint)) {
-			throw new Exception(sprintf(
-				'Image->resample(): #4 $arrSrcSize and #5 $arrSrcPoint must describe a valid area of this image, given size [%s][%s], point [%s][%s]',
-				$arrSrcSize[0],
-				$arrSrcSize[1],
-				$arrSrcPoint[0],
-				$arrSrcPoint[1]
-			));
-		}
+		$objSrcSize->checkNonNullArea();
+		$this->getSize()->checkValidSubArea($objSrcSize, $objSrcPoint);
 		
-		if(!$arrDstPoint) { $arrDstPoint = array(0, 0); }
-		if(!$arrDstSize) { $arrDstSize = array($arrSrcSize[0] + $arrDstPoint[0], $arrSrcSize[1] + $arrDstPoint[1]); }
+		$objDstPoint || $objDstPoint = new Point2D(0, 0);
+		$objDstSize || $objDstSize = Size::createFromPoint($objSrcSize->toPoint()->add($objDstPoint));
 		
-		if(!$objTarget || !$objTarget->res) { $objTarget = self::createEmpty($arrDstSize[0], $arrDstSize[1]); }
+		$objDstSize->checkNonNullArea();
 		
-		if(!$objTarget->isValidArea($arrDstSize, $arrDstPoint)) {
-			throw new Exception(sprintf(
-				'Image->resample(): #2 $arrDstSize and #3 $arrDstPoint must describe a valid area of the target image, given size [%s][%s], point [%s][%s]',
-				$arrSrcSize[0],
-				$arrSrcSize[1],
-				$arrSrcPoint[0],
-				$arrSrcPoint[1]
-			));
-		}
+		$objTarget && $objTarget->getRessource() || $objTarget = call_user_func(array(__CLASS__, 'createEmpty'), $objDstSize);
 		
-		if(imageistruecolor($this->resImage)) {
-			imagealphablending($objTarget->res, $blnAlphaBlending);
-			if(!$blnAlphaBlending) {
-				$intTranspIndex = imagecolorallocatealpha($objTarget->res, 0, 0, 0, 127);
-				imagefill($objTarget->res, 0, 0, $intTranspIndex);
-			}
-			imagesavealpha($objTarget->res, true);
+		$objTarget->getSize()->checkValidSubArea($objDstSize, $objDstPoint);
+		
+		if($this->isTrueColorImage()) {
+			imagealphablending($objTarget->resImage, $blnAlphaBlending);
+			// filling the image with "transparent" color to ensure existance of alpha channel information
+			$blnAlphaBlending || imagefill($objTarget->resImage, 0, 0, $objTarget->getColorIndex(new Color(0, 0, 0, 255)));
+			imagesavealpha($objTarget->resImage, true);
 		} else {
-			$intTranspIndex = imagecolortransparent($this->resImage);
-			if ($intTranspIndex >= 0 && $intTranspIndex < imagecolorstotal($this->resImage)) {
-				$arrColor = imagecolorsforindex($this->resImage, $intTranspIndex);
-				$intTranspIndex = imagecolorallocate($objTarget->res, $arrColor['red'], $arrColor['green'], $arrColor['blue']);
-				imagefill($objTarget->res, 0, 0, $intTranspIndex);
-				imagecolortransparent($objTarget->res, $intTranspIndex);
-			}
+			$intTranspIndex = $objTarget->getColorIndex($this->getTransparentColor());
+			imagefill($objTarget->resImage, 0, 0, $intTranspIndex);
+			imagecolortransparent($objTarget->resImage, $intTranspIndex);
 		}
 		
 		/*echo $arrDstPoint[0], 'x', $arrDstPoint[1], '/',
@@ -582,11 +511,12 @@ class Image {
 			 $arrDstSize[0], 'x', $arrDstSize[1], '/',
 			 $arrSrcSize[0], 'x', $arrSrcSize[1], '/';*/
 		
-		imagecopyresampled($objTarget->res, $this->resImage,
-			$arrDstPoint[0], $arrDstPoint[1],
-			$arrSrcPoint[0], $arrSrcPoint[1],
-			$arrDstSize[0], $arrDstSize[1],
-			$arrSrcSize[0], $arrSrcSize[1]);
+		imagecopyresampled($objTarget->resImage, $this->resImage,
+			$objDstPoint->getX(), $objDstPoint->getY(),
+			$objSrcPoint->getX(), $objSrcPoint->getY(),
+			$objDstSize->getWidth(), $objDstSize->getHeight(),
+			$objSrcSize->getWidth(), $objSrcSize->getHeight()
+		);
 		
 		return $objTarget;
 	}
@@ -609,7 +539,7 @@ class Image {
 	 * 			Returns the <tt>File</tt> object or <tt>false</tt>, if it could
 	 * 			not be created for any reason.
 	 */
-	public static function getFile($varFile, $blnCreate = false) {
+	protected static function getFile($varFile, $blnCreate = false) {
 		if($varFile instanceof File)
 			return $varFile;
 			
@@ -640,5 +570,15 @@ class Image {
 		
 		return new File($varFile);
 	}
+	
+	public abstract function toPaletteImage();
+	
+	public abstract function toTrueColorImage();
+	
+	public abstract function isPaletteImage();
+	
+	public abstract function isTrueColorImage();
+	
+	public abstract function getColorIndex(Color $objColor, $blnAllocate = true, $blnExact = true);
 	
 }
