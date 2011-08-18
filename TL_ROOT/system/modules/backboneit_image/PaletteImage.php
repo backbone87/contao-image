@@ -61,7 +61,9 @@ class PaletteImage extends Image {
 	}
 	
 	public function toTrueColorImage() {
-		return null;
+		$objTarget = TrueColorImage::createEmpty($this->getSize());
+		
+		return $objTarget;
 	}
 	
 	public final function isPaletteImage() {
