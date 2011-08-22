@@ -6,8 +6,13 @@ abstract class PaletteImageOperation extends ImageOperation {
 		parent::__construct();
 	}
 	
-	protected function createEmpty(Size $objSize) {
-		return PaletteImage::createEmpty($objSize);
+	protected function prepare() {
+		parent::prepare();
+		
+		if($this->objSource->isPaletteImage())
+			return;
+			
+		
 	}
 	
 }

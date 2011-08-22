@@ -74,4 +74,8 @@ class PaletteImage extends Image {
 		return false;
 	}
 	
+	public function __clone() {
+		
+	}
+	
 }

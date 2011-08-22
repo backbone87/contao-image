@@ -2,37 +2,34 @@
 
 abstract class ImageOperation {
 	
-	private $objTarget;
+	/**
+	 * the original image
+	 */
+	private $objOriginal;
 	
-	private $objSource;
+	/**
+	 * whether or not, the original image is allowed to be modified
+	 */
+	private $blnOriginalImmutable = true;
+	
+	protected $objIntermediate;
 	
 	private $objResult;
 	
 	protected function __construct() {
 	}
 	
-	public function setSourceImage(Image $objSource) {
-		$this->objSource = $objSource;
+	public function setOriginalImage(Image $objOriginal, $blnOriginalImmutable = true) {
+		$this->objOriginal = $objOriginal;
+		$this->blnOriginalImmutable = $blnOriginalImmutable;
 	}
 	
-	public function getSourceImage() {
-		return $this->objSource;
+	public function getOriginalImage() {
+		return $this->objOriginal;
 	}
 	
-	public function setTargetImage(Image $objTarget = null) {
-		$this->objTarget = $objTarget;
-	}
-	
-	public function getTargetImage() {
-		return $this->objTarget;
-	}
-	
-	public function setTargetSize(Size $objSize) {
-		$this->objTargetSize = $objSize;
-	}
-	
-	public function setTargetSize() {
-		return $this->objTargetSize;
+	public function isOriginalImmutable() {
+		return $this->blnSourceImmutable;
 	}
 	
 	public function hasResult() {
@@ -49,26 +46,44 @@ abstract class ImageOperation {
 	}
 	
 	protected function prepare() {
-		if(!$this->objSource || $this->objSource->getRessource()) {
+		if(!$this->objOriginal || $this->objOriginal->getRessource()) {
 			throw new Exception('ImageOperation->prepare(): Invalid source image.');
 		}
 		
 		unset($this->objResult);
 		
-		if($this->objTarget && $this->objTarget->getRessource()) {
-			//nothing todo, all fine
-			
-		} elseif($this->objTargetSize) {
-			$this->objTarget = $this->createEmpty($this->objTargetSize);
-			
-		} else {
-			throw new Exception('ImageOperation->prepare(): No target image or size given.');
-			
-		}
+//		if($this->objTarget && $this->objTarget->getRessource()) {
+//			//nothing todo, all fine
+//			
+//		} elseif($this->objTargetSize) {
+//			$this->objTarget = $this->createEmpty($this->objTargetSize);
+//			
+//		} else {
+//			throw new Exception('ImageOperation->prepare(): No target image or size given.');
+//			
+//		}
 	}
 	
 	protected abstract function perform();
 	
-	protected abstract function createEmpty(Size $objSize);
+//	protected abstract function createEmpty(Size $objSize);
+
 	
+//	private $objTarget;
+//	public function setTargetImage(Image $objTarget = null) {
+//		$this->objTarget = $objTarget;
+//	}
+//	
+//	public function getTargetImage() {
+//		return $this->objTarget;
+//	}
+//	
+//	public function setTargetSize(Size $objSize) {
+//		$this->objTargetSize = $objSize;
+//	}
+//	
+//	public function getTargetSize() {
+//		return $this->objTargetSize;
+//	}
+
 }
