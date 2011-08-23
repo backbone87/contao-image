@@ -12,11 +12,11 @@ abstract class ImageOperation {
 	 */
 	private $blnOriginalImmutable = true;
 	
-	protected $objIntermediate;
-	
 	private $objResult;
 	
-	protected function __construct() {
+	protected function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
+		$this->objOriginal = $objOriginal;
+		$this->blnOriginalImmutable = $blnOriginalImmutable;
 	}
 	
 	public function setOriginalImage(Image $objOriginal, $blnOriginalImmutable = true) {
@@ -41,49 +41,26 @@ abstract class ImageOperation {
 	}
 	
 	public function execute() {
-		$this->prepare();
-		$this->perform();
+		$this->objResult = $this->perform($this->prepare($this->modifiesOriginal()));
 	}
 	
-	protected function prepare() {
+	protected function prepare($blnModifiesOriginal = true) {
 		if(!$this->objOriginal || $this->objOriginal->getRessource()) {
 			throw new Exception('ImageOperation->prepare(): Invalid source image.');
 		}
 		
 		unset($this->objResult);
 		
-//		if($this->objTarget && $this->objTarget->getRessource()) {
-//			//nothing todo, all fine
-//			
-//		} elseif($this->objTargetSize) {
-//			$this->objTarget = $this->createEmpty($this->objTargetSize);
-//			
-//		} else {
-//			throw new Exception('ImageOperation->prepare(): No target image or size given.');
-//			
-//		}
+		if($blnModifiesOriginal && $this->blnOriginalImmutable)
+			return clone $this->objOriginal;
+
+		return $this->objOriginal;
+	}
+	
+	protected function modifiesOriginal() {
+		return true;
 	}
 	
 	protected abstract function perform();
 	
-//	protected abstract function createEmpty(Size $objSize);
-
-	
-//	private $objTarget;
-//	public function setTargetImage(Image $objTarget = null) {
-//		$this->objTarget = $objTarget;
-//	}
-//	
-//	public function getTargetImage() {
-//		return $this->objTarget;
-//	}
-//	
-//	public function setTargetSize(Size $objSize) {
-//		$this->objTargetSize = $objSize;
-//	}
-//	
-//	public function getTargetSize() {
-//		return $this->objTargetSize;
-//	}
-
 }

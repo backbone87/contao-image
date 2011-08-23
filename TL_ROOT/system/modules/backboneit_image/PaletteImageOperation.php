@@ -6,13 +6,18 @@ abstract class PaletteImageOperation extends ImageOperation {
 		parent::__construct();
 	}
 	
-	protected function prepare() {
-		parent::prepare();
+	protected function prepare($blnModifiesOriginal = true) {
+		$objOriginal = parent::prepare(false);
 		
-		if($this->objSource->isPaletteImage())
-			return;
+		if(!$objOriginal->isPaletteImage()) {
+			return $objOriginal->toPaletteImage();
 			
-		
+		} elseif($blnModifiesOriginal && $this->isOriginalImmutable()) {
+			return clone $objOriginal;
+			
+		} else {
+			return $objOriginal;
+		}
 	}
 	
 }
