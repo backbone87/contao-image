@@ -1,5 +1,7 @@
 <?php
 
+//namespace backboneit\image;
+
 abstract class GdLib {
 
 	public static function isLoaded() {

@@ -1,5 +1,7 @@
 <?php
 
+//namespace backboneit\image;
+
 class Color {
 
 	public static function createFromHexRGBA($strColor) {
@@ -29,7 +31,7 @@ class Color {
 		$this->intRed = max(min(round($intRed), 255), 0);
 		$this->intGreen = max(min(round($intGreen), 255), 0);
 		$this->intBlue = max(min(round($intBlue), 255), 0);
-		$this->intAlpha = max(min(round($intAlpha), 255), 0);
+		$this->intAlpha = max(min(round(floatval($intAlpha)), 255), 0);
 	}
 	
 	public function getRed() {

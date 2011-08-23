@@ -1,5 +1,7 @@
 <?php
 
+//namespace backboneit\image;
+
 class Point2D {
 	
 	private $intX;

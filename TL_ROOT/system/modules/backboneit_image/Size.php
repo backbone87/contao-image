@@ -1,5 +1,7 @@
 <?php
 
+//namespace backboneit\image;
+
 class Size {
 	
 	public static function createFromRatioWidth($fltRatio, $intWidth) {

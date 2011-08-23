@@ -1,5 +1,9 @@
 <?php
 
+//namespace backboneit\image\operations;
+
+//use backboneit\image\Image as Image;
+
 abstract class PaletteImageOperation extends ImageOperation {
 
 	protected function __construct() {

@@ -1,5 +1,11 @@
 <?php
 
+//namespace backboneit\image\operations;
+
+//use backboneit\image\Point2D as Point2D;
+//use backboneit\image\Size as Size;
+//use backboneit\image\Image as Image;
+
 class ResampleOperation extends TrueColorImageOperation {
 	
 	protected $objDstImage;
@@ -26,6 +32,16 @@ class ResampleOperation extends TrueColorImageOperation {
 		$this->objSrcPoint = $objSrcPoint;
 	}
 	
+	protected $blnAlphaBlending = false;
+	
+	public function setAlphaBlending($blnAlphaBlending = false) {
+		$this->blnAlphaBlending = !!$blnAlphaBlending;
+	}
+	
+	public function isAlphaBlending() {
+		return $this->blnAlphaBlending;
+	}
+	
 	protected function perform($objOriginal) {
 		$objSrcPoint = $this->objSrcPoint ? $this->objSrcPoint : new Point2D(0, 0);
 		$objSrcSize = $this->objSrcSize ? $this->objSrcSize : Size::createFromPoint($objOriginal->getSize()->toPoint()->subtract($objSrcPoint));
@@ -38,27 +54,22 @@ class ResampleOperation extends TrueColorImageOperation {
 		
 		$objDstSize->checkNonNullArea();
 		
-		$objTarget && $objTarget->getRessource() || $objTarget = call_user_func(array(__CLASS__, 'createEmpty'), $objDstSize);
+		$objDstImage = $this->objDstImage ? $this->objDstImage : TrueColorImage::createEmpty($objDstSize);
+		$resDstImage = $objDstImage->getRessource();
 		
-		$objTarget->getSize()->checkValidSubArea($objDstSize, $objDstPoint);
+		$objDstImage->getSize()->checkValidSubArea($objDstSize, $objDstPoint);
 		
-		if($this->isTrueColorImage()) {
-			imagealphablending($objTarget->resImage, $blnAlphaBlending);
-			// filling the image with "transparent" color to ensure existance of alpha channel information
-			$blnAlphaBlending || imagefill($objTarget->resImage, 0, 0, $objTarget->getColorIndex(new Color(0, 0, 0, 255)));
-			imagesavealpha($objTarget->resImage, true);
-		} else {
-			$intTranspIndex = $objTarget->getColorIndex($this->getTransparentColor());
-			imagefill($objTarget->resImage, 0, 0, $intTranspIndex);
-			imagecolortransparent($objTarget->resImage, $intTranspIndex);
-		}
+		imagealphablending($resDstImage, true);
+		$objBottomRight = $objDstImage->getSize()->toPoint();
+		imagefilledrectangle($resDstImage,
+			0, 0,
+			$objBottomRight->getX(), $objBottomRight->getY(),
+			$objDstImage->getColorIndex(new Color(0, 0, 0, 255))
+		);
+		imagealphablending($resDstImage, $blnAlphaBlending);
+		imagesavealpha($resDstImage, true);
 		
-		/*echo $arrDstPoint[0], 'x', $arrDstPoint[1], '/',
-			 $arrSrcPoint[0], 'x', $arrSrcPoint[1], '/',
-			 $arrDstSize[0], 'x', $arrDstSize[1], '/',
-			 $arrSrcSize[0], 'x', $arrSrcSize[1], '/';*/
-		
-		imagecopyresampled($objTarget->resImage, $this->resImage,
+		imagecopyresampled($resDstImage, $objOriginal->getRessource(),
 			$objDstPoint->getX(), $objDstPoint->getY(),
 			$objSrcPoint->getX(), $objSrcPoint->getY(),
 			$objDstSize->getWidth(), $objDstSize->getHeight(),
@@ -66,6 +77,10 @@ class ResampleOperation extends TrueColorImageOperation {
 		);
 		
 		return $objTarget;
+	}
+	
+	public function modifiesOriginal() {
+		return $this->objDstImage && $this->objDstImage == $this->getOriginalImage();
 	}
 	
 }

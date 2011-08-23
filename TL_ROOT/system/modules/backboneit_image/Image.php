@@ -1,5 +1,7 @@
 <?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
 
+//namespace backboneit\image;
+
 /**
  * <p>
  * This class encapsulates an in-memory representation of an image. There are
