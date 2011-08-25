@@ -6,17 +6,11 @@
 
 abstract class ImageOperation {
 	
-	/**
-	 * the original image
-	 */
-	private $objOriginal;
+	protected $objOriginal;
 	
-	/**
-	 * whether or not, the original image is allowed to be modified
-	 */
-	private $blnOriginalImmutable = true;
+	protected $blnOriginalImmutable = true;
 	
-	private $objResult;
+	protected $objResult;
 	
 	protected function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
 		$this->objOriginal = $objOriginal;
@@ -55,10 +49,11 @@ abstract class ImageOperation {
 		
 		unset($this->objResult);
 		
-		if($blnModifiesOriginal && $this->blnOriginalImmutable)
+		if($blnModifiesOriginal && $this->blnOriginalImmutable) {
 			return clone $this->objOriginal;
-
-		return $this->objOriginal;
+		} else {
+			return $this->objOriginal;
+		}
 	}
 	
 	protected function modifiesOriginal() {

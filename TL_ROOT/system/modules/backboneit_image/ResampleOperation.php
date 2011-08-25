@@ -7,6 +7,10 @@
 //use backboneit\image\Image as Image;
 
 class ResampleOperation extends TrueColorImageOperation {
+
+	protected function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
+		parent::__construct($objOriginal, $blnOriginalImmutable);
+	}
 	
 	protected $objDstImage;
 	
