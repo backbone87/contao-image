@@ -4,34 +4,29 @@ abstract class ImageFactory {
 	
 	/**
 	 * <p>
-	 * Creates a new empty truecolor <tt>Image</tt> object with given width and
+	 * Creates a new empty <tt>PaletteImage</tt> object with given width and
 	 * height.
 	 * </p>
 	 * <p>
-	 * The given size must not exceed the maximum of $GLOBALS['TL_CONFIG']['backboneit_image_maxsize'] and 4 000 000 pixels.
+	 * The given size must not exceed the maximum of
+	 * <tt>$GLOBALS['TL_CONFIG']['backboneit_image_maxsize']</tt>
+	 * and 4.000.000 pixels.
 	 * </p>
 	 * 
-	 * @param number $numWidth
-	 * 			The width of the image-canvas with <tt>$numWidth >= 1</tt>.
-	 * @param number $intHeight
-	 * 			The height of the image-canvas with <tt>$intHeight >= 1</tt>.
+	 * @param Size $objSize
+	 * 			The size of the image-canvas.
 	 * 
-	 * @return Image
-	 * 			The new <tt>Image</tt> object.
+	 * @return PaletteImage
+	 * 			The new <tt>PaletteImage</tt> object.
 	 * 
 	 * @throws RuntimeException
 	 * 			If the gd-library is not loaded.
 	 *			If given size is larger than currently allowed max size.
 	 * 			If image-creation fails.
 	 * @throws InvalidArgumentException
-	 * 			If intval of $numWidth or $numHeight is less than 1.
+	 * 			If either the width or height is 0.
 	 */
-	public static abstract function createEmpty(Size $objSize);
-
-	/**
-	 * @see Image::createEmpty()
-	 */
-	public static function createEmpty(Size $objSize) {
+	public static function createPaletteImage(Size $objSize) {
 		GdLib::checkLoaded();
 		GdLib::checkSizeAllowed($objSize);
 		$objSize->checkNonNullArea();
@@ -40,17 +35,39 @@ abstract class ImageFactory {
 		
 		if(!$resImage) {
 			throw new RuntimeException(sprintf(
-				'Image::createEmpty(): Failed to create empty image. Original message [%s].',
+				'Image::createPaletteImage(): Failed to create palette image. Original message [%s].',
 				$php_errormsg
 			));
 		}
 		
-		return new self($resImage);
+		return new PaletteImage($resImage);
 	}
+	
 	/**
-	 * @see Image::createEmpty()
+	 * <p>
+	 * Creates a new empty <tt>TrueColorImage</tt> object with given width and
+	 * height.
+	 * </p>
+	 * <p>
+	 * The given size must not exceed the maximum of
+	 * <tt>$GLOBALS['TL_CONFIG']['backboneit_image_maxsize']</tt>
+	 * and 4.000.000 pixels.
+	 * </p>
+	 * 
+	 * @param Size $objSize
+	 * 			The size of the image-canvas.
+	 * 
+	 * @return PaletteImage
+	 * 			The new <tt>TrueColorImage</tt> object.
+	 * 
+	 * @throws RuntimeException
+	 * 			If the gd-library is not loaded.
+	 *			If given size is larger than currently allowed max size.
+	 * 			If image-creation fails.
+	 * @throws InvalidArgumentException
+	 * 			If either the width or height is 0.
 	 */
-	public static function createEmpty(Size $objSize) {
+	public static function createTrueColorImage(Size $objSize) {
 		GdLib::checkLoaded();
 		GdLib::checkSizeAllowed($objSize);
 		$objSize->checkNonNullArea();
@@ -59,22 +76,33 @@ abstract class ImageFactory {
 		
 		if(!$resImage) {
 			throw new RuntimeException(sprintf(
-				'Image::createEmpty(): Failed to create empty image. Original message [%s].',
+				'Image::createTrueColorImage(): Failed to create true color image. Original message [%s].',
 				$php_errormsg
 			));
 		}
 		
-		return new self($resImage);
+		return new TrueColorImage($resImage);
+	}
+	
+	public static function createFromResource($resImage) {
+		if(!is_resource($resImage) || !imagesx($resImage))
+			throw new InvalidArgumentException('Image::createFromResource(): #1 $resImage is not a valid gdlib resource.');
+		
+		$strClass = imageistruecolor($resImage) ? 'TrueColorImage' : 'PaletteImage';
+		
+		return new $strClass($resImage);
 	}
 	
 	/**
 	 * <p>
-	 * Creates a new <tt>Image</tt> object from the given file. The canvas of
-	 * the <tt>Image</tt> object will have the width, height and contents of the
-	 * image described by the file.
+	 * Creates a new <tt>TrueColorImage</tt> or <tt>PaletteImage</tt> object
+	 * from the given file. The canvas of the <tt>Image</tt> object will have
+	 * the width, height and contents of the image described by the file.
 	 * </p>
 	 * <p>
-	 * The size of the image must not exceed MAX_SIZE.
+	 * The given size must not exceed the maximum of
+	 * <tt>$GLOBALS['TL_CONFIG']['backboneit_image_maxsize']</tt>
+	 * and 4.000.000 pixels.
 	 * </p>
 	 * 
 	 * @param mixed $varFile
@@ -92,29 +120,25 @@ abstract class ImageFactory {
 	 * 			If size of the given image is larger than MAX_SIZE.
 	 * 			If image-creation fails.
 	 */
-	public static function createFromFile($varFile, $strType = null) {
+	public static function createFromFile($varFile) {
 		GdLib::checkLoaded();
 		
 		$objFile = self::getFile($varFile);
 		$arrImageInfo = getimagesize(TL_ROOT . '/' . $objFile->value);
 		
-		GdLib::checkTypeSupported($strType);
+//		GdLib::checkTypeSupported($strType); // TODO supported types
 		
 		$objSize = new Size($arrImageInfo[0], $arrImageInfo[1]); //Size::createFromFile($objFile);
 		GdLib::checkSizeAllowed($objSize);
 		
-		$resImage = @call_user_func(GdLib::getCreateFunByType($strType), TL_ROOT . '/' . $objFile->value);
-		
-		if(!$resImage) {
+		try {
+			return ImageFormat::autoload($objFile);	
+		} catch(Exception $e) {
 			throw new RuntimeException(sprintf(
 				'Image::createFromFile(): Failed to process supplied imagefile. File is maybe damaged or no valid imagefile. Original message [%s].',
 				$php_errormsg
 			));
 		}
-		
-		$strClass = imageistruecolor($resImage) ? 'TrueColorImage' : 'PaletteImage';
-		
-		return new $strClass($resImage);
 	}
 	
 	/**
@@ -155,18 +179,18 @@ abstract class ImageFactory {
 	 *			Ready to use for HTML output. Otherwise <tt>null</tt>.
 	 * @see Image::createThumb();
 	 */
-	public static function getThumb($objOriginal, $numWidth = null, $numHeight = null, $strMode = '', $numQuality = 90, $fltTolerance = 0.03) {
+	public static function getThumb($objOriginal, $numWidth = null, $numHeight = null, $strMode = '', $fltTolerance = 0.03) {
 		$objOriginal = self::getFile($objOriginal);
+		
 		$objOrigSize = Size::createFromFile($objOriginal);
+		
 		$objDstSize = new Size($numWidth, $numHeight);
 		$objDstSize->getArea() || $objDstSize = $objDstSize->ratiofyUp($objOrigSize->getRatio());
 		
-		if(floatval($fltTolerance) != 0
-		&& $objOrigSize->scale(1 + $fltTolerance)->wraps($objDstSize)
-		&& $objOrigSize->scale(1 - $fltTolerance)->fits($objDstSize))
+		if(!$objDstSize->getArea() || $objDstSize->equals($objOrigSize, $fltTolerance))
 			return $objSource->value;
 		
-		$strCached = 'system/html/' . $objOriginal->filename . '-' . substr(md5('-w' . $numWidth . '-h' . $numHeight . '-' . $objOriginal->value . '-' . $strMode . '-' . $objOriginal->mtime), 0, 8) . '.' . $objOriginal->extension;
+		$strCached = 'system/html/' . $objOriginal->filename . '-' . substr(md5('-w' . $objDstSize->getWidth() . '-h' . $objDstSize->getHeight() . '-' . $objOriginal->value . '-' . $strMode . '-' . $objOriginal->mtime), 0, 8) . '.' . $objOriginal->extension;
 		if(is_file(TL_ROOT . '/' . $strCached))
 			return $strCached;
 	
@@ -180,13 +204,14 @@ abstract class ImageFactory {
 		}
 		
 		try {
-			$objThumb = self::createThumb($objOriginal, $objDstSize, $strMode);
-			$objThumb->store($strCached, $numQuality, true);
+			$objOp = new ThumbnailOperation($objDstSize, $strMode);
+			$objOp->execute(self::createFromFile($objOriginal));
+			ImageFormat::autostore($objOp->getResult(), self::getFile($strCached, true));
 		} catch(Exception $e) {
 			$strCached = $objOriginal->value;
 		}
 		
-		unset($objThumb);
+		unset($objOp);
 		
 		return $strCached;
 	}
@@ -209,7 +234,7 @@ abstract class ImageFactory {
 	 * 			Returns the <tt>File</tt> object or <tt>false</tt>, if it could
 	 * 			not be created for any reason.
 	 */
-	protected static function getFile($varFile, $blnCreate = false) {
+	public static function getFile($varFile, $blnCreate = false) {
 		if($varFile instanceof File)
 			return $varFile;
 			

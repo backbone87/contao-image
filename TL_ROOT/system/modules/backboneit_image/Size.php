@@ -66,7 +66,7 @@ class Size {
 	}
 	
 	public function getArea() {
-		return $this->intWidht * $this->intHeight;
+		return $this->intWidth * $this->intHeight;
 	}
 	
 	/**
@@ -184,7 +184,23 @@ class Size {
 			round($this->intHeight * $fltScale)
 		);
 	}
-
+	
+	public function equals(Size $objOther, $fltTolerance = 0) {
+		$fltTolerance = floatval($fltTolerance);
+		return $fltTolerance == 0
+			? $this->intWidth == $objOther->intWidth && $this->intHeight == $objOther->intHeight
+			: $this->scale(1 + $fltTolerance)->wraps($objOther) && $this->scale(1 - $fltTolerance)->fits($objOther);
+	}
+	
+	public function toPoint() {
+		return new Point2D($this->intWidth - 1, $this->intHeight - 1);
+	}
+	
+	public function isValidSubArea(Size $objSize, Point2D $objPoint) {
+		$objSize = self::createFromPoint($objSize->toPoint()->add($objPoint));
+		return $this->intWidth <= $objSize->intWidth && $this->intHeight <= $objSize->intHeight;
+	}
+	
 	/**
 	 * Throws an exception, if $this->getArea() == 0.
 	 * 
@@ -193,28 +209,21 @@ class Size {
 	public function checkNonNullArea() {
 		if(!$this->getArea()) {
 			throw new Exception(sprintf(
-				'Size::checkNonNullArea(): Area of size must be positive. Width [%s], height [%s].',
-				$this->intWidth,
-				$this->intHeight
+				'Size::checkNonNullArea(): Area of size must be positive. Size: %s.',
+				$this
 			));
 		}
 	}
 	
 	public function checkValidSubArea(Size $objSize, Point2D $objPoint) {
-	
-//		if(!$this->isValidArea($arrSrcSize, $arrSrcPoint)) {
-//			throw new Exception(sprintf(
-//				'Image->resample(): #4 $arrSrcSize and #5 $arrSrcPoint must describe a valid area of this image, given size [%s][%s], point [%s][%s]',
-//				$arrSrcSize[0],
-//				$arrSrcSize[1],
-//				$arrSrcPoint[0],
-//				$arrSrcPoint[1]
-//			));
-//		}
-	}
-	
-	public function toPoint() {
-		return new Point2D($this->intWidth - 1, $this->intHeight - 1);
+		if(!$this->isValidSubArea($objSize, $objPoint)) {
+			throw new Exception(sprintf(
+				'Size::checkValidSubArea(): Given arguments does not describe a valid sub area. Size: %s. Sub area size: %s. Point: %s',
+				$this,
+				$objSize,
+				$objPoint
+			));
+		}
 	}
 	
 }

@@ -31,7 +31,7 @@ abstract class ImageOperation {
 	}
 	
 	public function hasResult() {
-		return $this->objResult && $this->objResult->getRessource();
+		return $this->objResult && is_resource($this->objResult->getResource());
 	}
 	
 	public function getResult() {
@@ -43,14 +43,13 @@ abstract class ImageOperation {
 	}
 	
 	protected function prepare($blnModifiesOriginal = true) {
-		if(!$this->objOriginal || $this->objOriginal->getRessource()) {
-			throw new Exception('ImageOperation->prepare(): Invalid source image.');
-		}
+		$this->objOriginal->checkResource();
 		
 		unset($this->objResult);
 		
 		if($blnModifiesOriginal && $this->blnOriginalImmutable) {
 			return clone $this->objOriginal;
+			
 		} else {
 			return $this->objOriginal;
 		}
@@ -60,6 +59,6 @@ abstract class ImageOperation {
 		return true;
 	}
 	
-	protected abstract function perform();
+	protected abstract function perform(Image $objSource);
 	
 }

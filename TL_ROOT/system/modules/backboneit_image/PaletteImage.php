@@ -9,44 +9,62 @@ class PaletteImage extends Image {
 	}
 	
 	public function __clone() {
+		$objSize = $this->getSize();
+		$objTarget = ImageFactory::createPaletteImage($objSize);
 		
+		imagepalettecopy($objTarget->getResource(), $this->getResource());
+		
+        imagecopy($objTarget->getResource(), $this->getResource(),
+        	0, 0,
+        	0, 0,
+        	$objSize->getWidth(), $objSize->getHeight()
+        );
+        
+		return $objTarget;
 	}
 	
 	public function getColorIndex(Color $objColor, $blnAllocate = true, $blnExact = true) {
 		$blnAlpha = $objColor->getAlpha();
 		$intColor = call_user_func($blnAlpha ? 'imagecolorexactalpha' : 'imagecolorexact',
-			$this->resImage, $objColor->getRed(), $objColor->getGreen(), $objColor->getBlue(), round($objColor->getAlpha() / 2));
+			$this->getResource(), $objColor->getRed(), $objColor->getGreen(), $objColor->getBlue(), round($objColor->getAlpha() / 2));
 
 		if($intColor !== false)
 			return $intColor;
 
-		if($blnAllocate && imagecolorstotal($this->resImage) < 255)
+		if($blnAllocate && imagecolorstotal($this->getResource()) < 255)
 			return call_user_func($blnAlpha ? 'imagecolorallocatealpha' : 'imagecolorallocate',
-				$this->resImage, $objColor->getRed(), $objColor->getGreen(), $objColor->getBlue(), round($objColor->getAlpha() / 2));
+				$this->getResource(), $objColor->getRed(), $objColor->getGreen(), $objColor->getBlue(), round($objColor->getAlpha() / 2));
 			
 		if(!$blnExact) // TODO use lab and delta e
 			return call_user_func($blnAlpha ? 'imagecolorclosestalpha' : 'imagecolorclosest',
-				$this->resImage, $objColor->getRed(), $objColor->getGreen(), $objColor->getBlue(), round($objColor->getAlpha() / 2));
-			
-		return $intColor;
+				$this->getResource(), $objColor->getRed(), $objColor->getGreen(), $objColor->getBlue(), round($objColor->getAlpha() / 2));
+				
+		throw new Exception('PaletteImage::getColorIndex(): Failed to allocate color.'); // TODO
+	}
+	
+	public function getColor($intIndex) {
+		if(is_int($intIndex) && $intIndex >= 0 && $intIndex < imagecolorstotal($this->getResource()))
+			return Color::createFromAssoc(imagecolorsforindex($this->getResource(), $intIndex));
 	}
 	
 	public function getTransparentColor() {
-		$intTranspIndex = imagecolortransparent($this->resImage);
-		
-		if($intTranspIndex < 0 && $intTranspIndex >= imagecolorstotal($this->resImage))
-			return null;
-		
-		return Color::createFromAssoc(imagecolorsforindex($this->resImage, $intTranspIndex));
+		return $this->getColor(imagecolortransparent($this->getResource()));
 	}
 	
-	public function toPaletteImage() {
+	public function toPaletteImage($blnDither = false, $intNumColors = 255) {
 		return $this;
 	}
 	
 	public function toTrueColorImage() {
-		$objTarget = TrueColorImage::createEmpty($this->getSize());
+		$objSize = $this->getSize();
+		$objTarget = ImageFactory::createTrueColorImage($objSize);
 		
+        imagecopy($objTarget->getResource(), $this->getResource(),
+        	0, 0,
+        	0, 0,
+        	$objSize->getWidth(), $objSize->getHeight()
+        );
+        	
 		return $objTarget;
 	}
 	

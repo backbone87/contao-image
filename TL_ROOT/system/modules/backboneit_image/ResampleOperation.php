@@ -6,9 +6,9 @@
 //use backboneit\image\Size as Size;
 //use backboneit\image\Image as Image;
 
-class ResampleOperation extends TrueColorImageOperation {
+class ResampleOperation extends ImageOperation {
 
-	protected function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
+	public function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
 		parent::__construct($objOriginal, $blnOriginalImmutable);
 	}
 	
@@ -46,41 +46,43 @@ class ResampleOperation extends TrueColorImageOperation {
 		return $this->blnAlphaBlending;
 	}
 	
-	protected function perform($objOriginal) {
+	protected function perform(Image $objSource) {
 		$objSrcPoint = $this->objSrcPoint ? $this->objSrcPoint : new Point2D(0, 0);
-		$objSrcSize = $this->objSrcSize ? $this->objSrcSize : Size::createFromPoint($objOriginal->getSize()->toPoint()->subtract($objSrcPoint));
+		$objSrcSize = $this->objSrcSize ? $this->objSrcSize : Size::createFromPoint($objSource->getSize()->toPoint()->subtract($objSrcPoint));
 		
 		$objSrcSize->checkNonNullArea();
-		$objOriginal->getSize()->checkValidSubArea($objSrcSize, $objSrcPoint);
+		$objSource->getSize()->checkValidSubArea($objSrcSize, $objSrcPoint);
 		
 		$objDstPoint = $this->objDstPoint ? $this->objDstPoint : new Point2D(0, 0);
 		$objDstSize = $this->objDstSize ? $this->objDstSize : Size::createFromPoint($objSrcSize->toPoint()->add($objDstPoint));
 		
 		$objDstSize->checkNonNullArea();
 		
-		$objDstImage = $this->objDstImage ? $this->objDstImage : TrueColorImage::createEmpty($objDstSize);
-		$resDstImage = $objDstImage->getRessource();
+		$objDstImage = $this->objDstImage ? $this->objDstImage->toTrueColorImage() : ImageFactory::createTrueColorImage($objDstSize);
+		$resDstImage = $objDstImage->getResource();
 		
 		$objDstImage->getSize()->checkValidSubArea($objDstSize, $objDstPoint);
 		
-		imagealphablending($resDstImage, true);
+		$blnAlphaBlending = $objDstImage->getAlphaBlending();
+		$objDstImage->setAlphaBlending(true);
 		$objBottomRight = $objDstImage->getSize()->toPoint();
 		imagefilledrectangle($resDstImage,
 			0, 0,
 			$objBottomRight->getX(), $objBottomRight->getY(),
 			$objDstImage->getColorIndex(new Color(0, 0, 0, 255))
 		);
-		imagealphablending($resDstImage, $blnAlphaBlending);
-		imagesavealpha($resDstImage, true);
+		$objDstImage->setAlphaBlending($this->blnAlphaBlending);
 		
-		imagecopyresampled($resDstImage, $objOriginal->getRessource(),
+		imagecopyresampled($resDstImage, $objSource->getResource(),
 			$objDstPoint->getX(), $objDstPoint->getY(),
 			$objSrcPoint->getX(), $objSrcPoint->getY(),
 			$objDstSize->getWidth(), $objDstSize->getHeight(),
 			$objSrcSize->getWidth(), $objSrcSize->getHeight()
 		);
 		
-		return $objTarget;
+		$objDstImage->setAlphaBlending($blnAlphaBlending);
+		
+		return $objDstImage;
 	}
 	
 	public function modifiesOriginal() {
