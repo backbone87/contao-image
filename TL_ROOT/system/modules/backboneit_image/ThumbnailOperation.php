@@ -2,6 +2,9 @@
 
 class ThumbnailOperation extends ImageOperation {
 	
+	public function __construct() {
+		parent::__construct();
+	}
 
 	/**
 	 * Thumbnail generation modes.
