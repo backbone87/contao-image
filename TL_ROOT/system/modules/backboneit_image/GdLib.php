@@ -24,17 +24,17 @@ abstract class GdLib {
 			
 		$intSupported = imagetypes();
 		
-		return self::$arrSupported = array(
-	    	'jpg'	=> $intSupported & IMG_JPG,
-	    	'jpeg'	=> $intSupported & IMG_JPG,
-	    	'gif'	=> $intSupported & IMG_GIF,
+		return self::$arrSupported = array_filter(array(
 	    	'png'	=> $intSupported & IMG_PNG,
+	    	'jpg'	=> $intSupported & IMG_JPG,
+	    	'gif'	=> $intSupported & IMG_GIF,
 	    	'wbmp'	=> $intSupported & IMG_WBMP
-		);
+		));
 	}
 	
 	public static function isTypeSupported($strType) {
 		$arrSupported = self::getSupportedTypes();
+		$strType == 'jpeg' && $strType = 'jpg';
 		return $arrSupported[$strType];
 	}
 	

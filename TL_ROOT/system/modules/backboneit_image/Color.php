@@ -5,14 +5,14 @@
 class Color {
 
 	public static function createFromHexRGBA($strColor) {
-		if(!preg_match('/(?:^|#)([a-f0-9]{3}|[a-f0-9]{4}|[a-f0-9]{6}|[a-f0-9]{8})/i', $strColor, $arrMatches))
+		if(!preg_match('/(?:^|#)([a-f0-9]{8}|[a-f0-9]{6}|[a-f0-9]{4}|[a-f0-9]{3})/i', $strColor, $arrMatches))
 			throw new InvalidArgumentException(sprintf(
 				'Color::createFromHexRGBA(): #1 $strColor is not a valid hex color string, given [%s]',
 				$strColor
 			));
 		$arrColor = str_split(strlen($arrMatches[1]) < 5 ? preg_replace('/(.)/', '$1$1', $strColor) : $arrMatches[1], 2);
 	
-		return new self(hexdec($arrColor[0]), hexdec($arrColor[1]), hexdec($arrColor[2]), $arrColor[3] ? hexdec($arrColor[0]) : 0);
+		return new self(hexdec($arrColor[0]), hexdec($arrColor[1]), hexdec($arrColor[2]), $arrColor[3] ? hexdec($arrColor[3]) : 0);
 	}
 	
 	public static function createFromAssoc($arrColor) {
