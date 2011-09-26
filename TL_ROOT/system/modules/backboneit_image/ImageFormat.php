@@ -9,11 +9,10 @@ abstract class ImageFormat {
 	}
 	
 	public static function autostore(Image $objImage, File $objFile, $strFormatClass = null) {
-		$strClass = self::$arrFormatClassesByExtension[$objFile->extension];
-		
-		if($strClass) {
-		} elseif($strFormatClass && is_subclass_of($strFormatClass, __CLASS__)) {
+		if($strFormatClass && is_subclass_of($strFormatClass, __CLASS__)) {
 			$strClass = $strFormatClass;
+		} elseif(self::$arrFormatClassesByExtension[$objFile->extension]) {
+			$strClass = self::$arrFormatClassesByExtension[$objFile->extension];
 		} else {
 			$strClass = self::DEFAULT_FORMAT_CLASS;
 		}

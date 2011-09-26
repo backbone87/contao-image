@@ -40,12 +40,26 @@ class Size {
 	private $intHeight;
 	private $fltRatio;
 	
+	/**
+	 * Creates a new Size object instance, with the given width and height.
+	 * 
+	 * @param integer $intWidth
+	 * 			The width of this new instance.
+	 * @param integer $intHeight
+	 * 			The height of this new instance.
+	 */
 	public function __construct($intWidth, $intHeight) {
 		$this->intWidth = max(intval($intWidth), 0);
 		$this->intHeight = max(intval($intHeight), 0);
 		$this->fltRatio = $this->intHeight == 0 ? INF : $this->intWidth / $this->intHeight;
 	}
 	
+	/**
+	 * Returns a human readable string representation of this Size.
+	 * 
+	 * @return string
+	 * 			The size's string representation.
+	 */
 	public function __toString() {
 		return sprintf('[Object: Size (Width %s, Height %s)]',
 			$this->intWidth,
@@ -53,18 +67,42 @@ class Size {
 		);
 	}
 	
+	/**
+	 * Returns the width of this Size.
+	 * 
+	 * @return integer
+	 * 			This size's width.
+	 */
 	public function getWidth() {
 		return $this->intWidth;
 	}
 	
+	/**
+	 * Returns the height of this Size.
+	 * 
+	 * @return integer
+	 * 			This size's height.
+	 */
 	public function getHeight() {
 		return $this->intHeight;
 	}
 	
+	/**
+	 * Returns the aspect ratio (width / height) of this Size.
+	 * 
+	 * @return float
+	 * 			This size's aspect ratio.
+	 */
 	public function getRatio() {
 		return $this->fltRatio;
 	}
 	
+	/**
+	 * Returns the area of this Size.
+	 * 
+	 * @return integer
+	 * 			This size's area.
+	 */
 	public function getArea() {
 		return $this->intWidth * $this->intHeight;
 	}
@@ -173,7 +211,7 @@ class Size {
 	 * Returns a new Size object scaled by the given scale.
 	 *  
 	 * @param float $fltScale
-	 * 			The scale multiplier
+	 * 			The scale multiplier.
 	 * @return Size
 	 * 			The new size scaled by $fltScale.
 	 */
@@ -185,6 +223,46 @@ class Size {
 		);
 	}
 	
+	/**
+	 * Returns a Size object with a maximum possible area that fits into the
+	 * given outer size, while maintaining the aspect ratio of this size.
+	 * 
+	 * @param Size $objOuter
+	 * 			The outer size.
+	 * @return Size
+	 * 			A size, which fits into $objOuter.
+	 */
+	public function scaleToFit(self $objOuter) {
+		$fltScale = min(1, $objOuter->getWidth() / $this->intWidth, $objOuter->getHeight() / $this->intHeight);
+		return $fltScale < 1 ? $this->scale($fltScale) : $this;
+	}
+	
+	
+	/**
+	 * Returns a Size object with a minimal possible area that wraps the given
+	 * inner size, while maintaining the aspect ratio of this size.
+	 * 
+	 * @param Size $objInner
+	 * 			The inner size.
+	 * @return Size
+	 * 			A size, which warps $objInner.
+	 */
+	public function scaleToWrap(self $objInner) {
+		$fltScale = max(1, $objInner->getWidth() / $this->intWidth, $objInner->getHeight() / $this->intHeight);
+		return $fltScale > 1 ? $this->scale($fltScale) : $this;
+	}
+	
+	/**
+	 * Tells whether this Size equals the given Size, with the given tolerance.
+	 * 
+	 * @param Size $objOther
+	 * 			The size to compare against.
+	 * @param float $fltTolerance
+	 * 			The percentual margin within the two sizes are considered equal.
+	 * 
+	 * @return boolean
+	 * 			If this size equals $objOther true, otherwise false.
+	 */
 	public function equals(Size $objOther, $fltTolerance = 0) {
 		$fltTolerance = floatval($fltTolerance);
 		return $fltTolerance == 0
@@ -192,8 +270,31 @@ class Size {
 			: $this->scale(1 + $fltTolerance)->wraps($objOther) && $this->scale(1 - $fltTolerance)->fits($objOther);
 	}
 	
+	/**
+	 * Returns a Point2D object, which denotes the lower right corner of this
+	 * size. The upper left corner is treated as the origin.
+	 * 
+	 * @return Point2D
+	 * 			This size corresponding point.
+	 */
 	public function toPoint() {
 		return new Point2D($this->intWidth - 1, $this->intHeight - 1);
+	}
+	
+	/**
+	 * Returns an associative or indexed array containing this size's width and
+	 * height.
+	 * 
+	 * @param boolean $blnAssoc
+	 * 			Whether to return an associative or indexed array.
+	 * 
+	 * @return array
+	 * 			The size array.
+	 */
+	public function toArray($blnAssoc = false) {
+		return $blnAssoc
+			? array('width' => $this->intWidth, 'height' => $this->intHeight)
+			: array($this->intWidth, $this->intHeight);
 	}
 	
 	public function isValidSubArea(Size $objSize, Point2D $objPoint) {
