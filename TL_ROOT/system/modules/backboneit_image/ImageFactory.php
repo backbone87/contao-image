@@ -85,7 +85,7 @@ abstract class ImageFactory {
 	}
 	
 	public static function createFromResource($resImage) {
-		if(!is_resource($resImage) || !imagesx($resImage))
+		if(!is_resource($resImage) || !@imagesx($resImage))
 			throw new InvalidArgumentException('Image::createFromResource(): #1 $resImage is not a valid gdlib resource.');
 		
 		$strClass = imageistruecolor($resImage) ? 'TrueColorImage' : 'PaletteImage';

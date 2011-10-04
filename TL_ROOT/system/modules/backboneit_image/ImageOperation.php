@@ -13,8 +13,7 @@ abstract class ImageOperation {
 	protected $objResult;
 	
 	protected function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
-		$this->objOriginal = $objOriginal;
-		$this->blnOriginalImmutable = $blnOriginalImmutable;
+		$this->setOriginalImage($objOriginal, $blnOriginalImmutable);
 	}
 	
 	public function setOriginalImage(Image $objOriginal, $blnOriginalImmutable = true) {

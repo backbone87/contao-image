@@ -7,36 +7,36 @@
 //use backboneit\image\Image as Image;
 
 class ResampleOperation extends ImageOperation {
+	
+	protected $objDstImage;
+	
+	protected $objDstSize;
+	
+	protected $objDstPoint;
+	
+	protected $objSrcSize;
+	
+	protected $objSrcPoint;
+	
+	protected $blnAlphaBlending = false;
 
 	public function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
 		parent::__construct($objOriginal, $blnOriginalImmutable);
 	}
 	
-	protected $objDstImage;
-	
 	public function setDstImage(Image $objDstImage = null) {
 		$this->objDstImage = $objDstImage;
 	}
-	
-	protected $objDstSize;
-	
-	protected $objDstPoint;
 	
 	public function setDstArea(Size $objDstSize = null, Point2D $objDstPoint = null) {
 		$this->objDstSize = $objDstSize;
 		$this->objDstPoint = $objDstPoint;
 	}
 	
-	protected $objSrcSize;
-	
-	protected $objSrcPoint;
-	
 	public function setSrcArea(Size $objSrcSize = null, Point2D $objSrcPoint = null) {
 		$this->objSrcSize = $objSrcSize;
 		$this->objSrcPoint = $objSrcPoint;
 	}
-	
-	protected $blnAlphaBlending = false;
 	
 	public function setAlphaBlending($blnAlphaBlending = false) {
 		$this->blnAlphaBlending = !!$blnAlphaBlending;
@@ -54,15 +54,17 @@ class ResampleOperation extends ImageOperation {
 		$objSource->getSize()->checkValidSubArea($objSrcSize, $objSrcPoint);
 		
 		$objDstPoint = $this->objDstPoint ? $this->objDstPoint : new Point2D(0, 0);
-		$objDstSize = $this->objDstSize ? $this->objDstSize : Size::createFromPoint($objSrcSize->toPoint()->add($objDstPoint));
+		$objDstSize = $this->objDstSize ? $this->objDstSize : $objSrcSize;
 		
 		$objDstSize->checkNonNullArea();
 		
-		$objDstImage = $this->objDstImage ? $this->objDstImage->toTrueColorImage() : ImageFactory::createTrueColorImage($objDstSize);
-		$resDstImage = $objDstImage->getResource();
+		$objDstImage = $this->objDstImage
+			? $this->objDstImage->toTrueColorImage()
+			: ImageFactory::createTrueColorImage(Size::createFromPoint($objDstSize->toPoint()->add($objDstPoint)));
 		
 		$objDstImage->getSize()->checkValidSubArea($objDstSize, $objDstPoint);
 		
+		$resDstImage = $objDstImage->getResource();
 		$blnAlphaBlending = $objDstImage->getAlphaBlending();
 		$objDstImage->setAlphaBlending(true);
 		$objBottomRight = $objDstImage->getSize()->toPoint();
