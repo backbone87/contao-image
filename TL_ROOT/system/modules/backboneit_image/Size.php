@@ -14,6 +14,18 @@ class Size {
 		return new self(round(floatval($fltRatio) * $intHeight), $intHeight);
 	}
 	
+	public static function createFromArray(array $arrSize, $blnAssoc = false) {
+		return $blnAssoc
+			? new self(
+				isset($arrSize['width']) ? $arrSize['width'] : $arrSize[0],
+				isset($arrSize['height']) ? $arrSize['height'] : $arrSize[1]
+			)
+			: new self(
+				isset($arrSize[0]) ? $arrSize[0] : $arrSize['width'],
+				isset($arrSize[1]) ? $arrSize[1] : $arrSize['height']
+			);
+	}
+	
 	public static function createFromPoint(Point2D $objPoint) {
 		return new self($objPoint->getX() + 1, $objPoint->getY() + 1);
 	}
@@ -295,6 +307,10 @@ class Size {
 		return $blnAssoc
 			? array('width' => $this->intWidth, 'height' => $this->intHeight)
 			: array($this->intWidth, $this->intHeight);
+	}
+	
+	public function isValidPoint(Point2D $objPoint) {
+		return $this->intWidth < $objPoint->getX() && $this->intHeight < $objPoint->getX();
 	}
 	
 	public function isValidSubArea(Size $objSize, Point2D $objPoint) {

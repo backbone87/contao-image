@@ -6,23 +6,20 @@
 
 abstract class ImageOperation {
 	
-	protected $objOriginal;
-	
-	protected $blnOriginalImmutable = true;
+	protected $blnOriginalImmutable;
 	
 	protected $objResult;
 	
-	protected function __construct(Image $objOriginal = null, $blnOriginalImmutable = true) {
-		$this->setOriginalImage($objOriginal, $blnOriginalImmutable);
+	
+	
+	protected function __construct($blnOriginalImmutable = true) {
+		$this->setOriginalImmutable($blnOriginalImmutable);
 	}
 	
-	public function setOriginalImage(Image $objOriginal, $blnOriginalImmutable = true) {
-		$this->objOriginal = $objOriginal;
+	
+	
+	public function setOriginalImmutable($blnOriginalImmutable = true) {
 		$this->blnOriginalImmutable = $blnOriginalImmutable;
-	}
-	
-	public function getOriginalImage() {
-		return $this->objOriginal;
 	}
 	
 	public function isOriginalImmutable() {
@@ -37,24 +34,18 @@ abstract class ImageOperation {
 		return $this->hasResult() ? $this->objResult : null;
 	}
 	
-	public function execute() {
-		$this->objResult = $this->perform($this->prepare($this->modifiesOriginal()));
-	}
-	
-	protected function prepare($blnModifiesOriginal = true) {
-		$this->objOriginal->checkResource();
-		
+	public function execute(Image $objSource = null) {
 		unset($this->objResult);
 		
-		if($blnModifiesOriginal && $this->blnOriginalImmutable) {
-			return clone $this->objOriginal;
-			
-		} else {
-			return $this->objOriginal;
+		if($objSource !== null) {
+			$objSource->checkResource();
+			$this->modifiesSource($objSource) && $this->blnOriginalImmutable && $objSource = clone $objSource;
 		}
+		
+		$this->objResult = $this->perform($objSource);
 	}
 	
-	protected function modifiesOriginal() {
+	protected function modifiesSource(Image $objSource = null) {
 		return true;
 	}
 	
