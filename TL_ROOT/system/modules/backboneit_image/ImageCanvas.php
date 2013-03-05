@@ -3,11 +3,11 @@
 /**
  * <p>
  * This class encapsulates an in-memory representation of an image. There are
- * 3 static factory methods to create an <tt>Image</tt> object, useful for the
+ * 3 static factory methods to create an <tt>ImageCanvas</tt> object, useful for the
  * most common cases.
  * </p>
  * <p>
- * Additionally this class offers a static mirror of the Controller->getImage()
+ * Additionally this class offers a static mirror of the Controller->getImageCanvas()
  * method.
  * </p>
  * <p>
@@ -25,7 +25,7 @@ class ImageCanvas {
 	
 	/**
 	 * @var string
-	 * 			Image storage format types.
+	 * 			ImageCanvas storage format types.
 	 */
 	const PNG	= 'png';
 	const JPEG	= 'jpg';
@@ -44,7 +44,7 @@ class ImageCanvas {
 	
 	/**
 	 * <p>
-	 * Creates a new empty truecolor <tt>Image</tt> object with given width and
+	 * Creates a new empty truecolor <tt>ImageCanvas</tt> object with given width and
 	 * height.
 	 * </p>
 	 * <p>
@@ -56,8 +56,8 @@ class ImageCanvas {
 	 * @param number $intHeight
 	 * 			The height of the image-canvas with <tt>$intHeight >= 1</tt>.
 	 * 
-	 * @return Image
-	 * 			The new <tt>Image</tt> object.
+	 * @return ImageCanvas
+	 * 			The new <tt>ImageCanvas</tt> object.
 	 * 
 	 * @throws RuntimeException
 	 * 			If the gd-library is not loaded.
@@ -72,7 +72,7 @@ class ImageCanvas {
 		$intWidth = intval($numWidth);
 		if($intWidth < 1) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::createEmpty(): #1 $numWidth must be greater or equal than [1], given [%s] (intval: [%s]).',
+				'ImageCanvas::createEmpty(): #1 $numWidth must be greater or equal than [1], given [%s] (intval: [%s]).',
 				$numWidth,
 				$intWidth
 			));
@@ -81,7 +81,7 @@ class ImageCanvas {
 		$intHeight = intval($numHeight);
 		if($intHeight < 1) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::createEmpty(): #2 $numHeight must be greater or equal than [1], given [%s] (intval: [%s]).',
+				'ImageCanvas::createEmpty(): #2 $numHeight must be greater or equal than [1], given [%s] (intval: [%s]).',
 				$numHeight,
 				$intHeight
 			));
@@ -89,20 +89,20 @@ class ImageCanvas {
 		
 		self::checkSize($intWidth, $intHeight);
 		
-		if(!$resImage = @imagecreatetruecolor($intWidth, $intHeight)) {
+		if(!$resImageCanvas = @imagecreatetruecolor($intWidth, $intHeight)) {
 			throw new RuntimeException(sprintf(
-				'Image::createEmpty(): Failed to create empty image. Original message [%s].',
+				'ImageCanvas::createEmpty(): Failed to create empty image. Original message [%s].',
 				$php_errormsg
 			));
 		}
 		
-		return new Image($resImage);
+		return new self($resImageCanvas);
 	}
     
 	/**
 	 * <p>
-	 * Creates a new <tt>Image</tt> object from the given file. The canvas of
-	 * the <tt>Image</tt> object will have the width, height and contents of the
+	 * Creates a new <tt>ImageCanvas</tt> object from the given file. The canvas of
+	 * the <tt>ImageCanvas</tt> object will have the width, height and contents of the
 	 * image described by the file.
 	 * </p>
 	 * <p>
@@ -114,8 +114,8 @@ class ImageCanvas {
 	 * 			absolute) or <tt>File</tt> object denoting an image file in
 	 * 			filesystem.
 	 * 
-	 * @return Image
-	 * 			The <tt>Image</tt> object.
+	 * @return ImageCanvas
+	 * 			The <tt>ImageCanvas</tt> object.
 	 * 
 	 * @throws RuntimeException
 	 * 			If the gd-library is not loaded.
@@ -132,7 +132,7 @@ class ImageCanvas {
 		
 		if(!$objFile->width) {
 			throw new Exception(sprintf(
-				'Image::createFromFile(): Data in file [%s] is no valid image or maybe damaged.',
+				'ImageCanvas::createFromFile(): Data in file [%s] is no valid image or maybe damaged.',
 				$objFile->value
 			));
 		}
@@ -140,24 +140,24 @@ class ImageCanvas {
 		self::checkSize($objFile->width, $objFile->height);
 		
 		$funCreateFrom = self::$funCreateFrom[$objFile->extension];
-		if(!$resImage = @$funCreateFrom(TL_ROOT . '/' . $objFile->value)) {
+		if(!$resImageCanvas = @$funCreateFrom(TL_ROOT . '/' . $objFile->value)) {
 			throw new Exception(sprintf(
-				'Image::createFromFile(): Failed to process supplied imagefile. File is maybe damaged or no valid imagefile. Original message [%s].',
+				'ImageCanvas::createFromFile(): Failed to process supplied imagefile. File is maybe damaged or no valid imagefile. Original message [%s].',
 				$php_errormsg
 			));
 		}
 		
-		return new Image($resImage);
+		return new self($resImageCanvas);
 	}
 	
 	/**
 	 * <p>
-	 * Returns an <tt>Image</tt> object containing a scaled version of the image
+	 * Returns an <tt>ImageCanvas</tt> object containing a scaled version of the image
 	 * denoted by <tt>$objSource</tt>.
 	 * </p>
 	 * <p>
 	 * If no width or height is given this method behaves exactly like
-	 * <tt>Image::createFromFile()</tt> with argument <tt>$objSource</tt>
+	 * <tt>ImageCanvas::createFromFile()</tt> with argument <tt>$objSource</tt>
 	 * supplied. The <tt>$strMode</tt> argument is ignored.
 	 * </p>
 	 * <p>
@@ -202,8 +202,8 @@ class ImageCanvas {
 	 * @param string $strMode
 	 * 			Optional. Defaults to <tt>''</tt> (the empty string).
 	 * 			One of <tt>'box'</tt>, <tt>'none'</tt> or <tt>''</tt>.
-	 * @return Image
-	 * 			The <tt>Image</tt> object of the thumb-image.
+	 * @return ImageCanvas
+	 * 			The <tt>ImageCanvas</tt> object of the thumb-image.
 	 * @throws Exception
 	 * 			If the gd-library is not loaded.
 	 * 			If arg-check fails.
@@ -214,7 +214,7 @@ class ImageCanvas {
 	 * 
 	 */
 	public static function createThumb($objOriginal, $numWidth = 0, $numHeight = 0, $intMode = self::CROP) {
-		if(!$objOriginal instanceof Image) {
+		if(!$objOriginal instanceof ImageCanvas) {
 			$objOriginal = self::createFromFile($objOriginal);
 			$blnDelete = true;
 		}
@@ -222,7 +222,7 @@ class ImageCanvas {
 		$arrDstSize = array(max(0, intval($numWidth)), max(0, intval($numHeight)));
 		if($arrDstSize[0] === 0 && $arrDstSize[1] === 0) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::createThumb(): Either #2 $numWidth or #3 $numHeight must be a positive number, given width [%s], height [%s].',
+				'ImageCanvas::createThumb(): Either #2 $numWidth or #3 $numHeight must be a positive number, given width [%s], height [%s].',
 				$numWidth,
 				$numHeight
 			));
@@ -253,7 +253,7 @@ class ImageCanvas {
 				
 				case self::CROP:
 				default:
-					$arrSrcDim = Image::ratiofy($objOriginal, $dblRatio);
+					$arrSrcDim = self::ratiofy($objOriginal, $dblRatio);
 					$arrSrcPoint = $objOriginal->centerize($arrSrcDim);
 					break;
 			}
@@ -279,7 +279,7 @@ class ImageCanvas {
 	 * given scaling mode and stored in a tmp-file with the given quality.
 	 * </p>
 	 * <p>
-	 * This method mirrors <tt>Controller->getImage()</tt> without the hook
+	 * This method mirrors <tt>Controller->getImageCanvas()</tt> without the hook
 	 * mechanism.
 	 * </p>
 	 * 
@@ -309,7 +309,7 @@ class ImageCanvas {
 	 *			If thumb-creation was successful, the path-string relative to
 	 *			<tt>TL_ROOT</tt> denoting the file this image is stored in.
 	 *			Ready to use for HTML output. Otherwise <tt>null</tt>.
-	 * @see Image::createThumb();
+	 * @see ImageCanvas::createThumb();
 	 */
 	public static function getThumb($objOriginal, $numWidth = null, $numHeight = null, $strMode = '', $numQuality = 90) {
 		$objOriginal = self::getFile($objOriginal);
@@ -340,20 +340,20 @@ class ImageCanvas {
 		return $strCached;
 	}
 	
-	protected $resImage;
+	protected $resImageCanvas;
 		
-	protected function __construct($resImage) {
-		$this->resImage = $resImage;
+	protected function __construct($resImageCanvas) {
+		$this->resImageCanvas = $resImageCanvas;
 	}
 	
 	public function __destruct() {
-		@imagedestroy($this->resImage);
+		@imagedestroy($this->resImageCanvas);
 	}
 	
 	/**
 	 * <p>
 	 * If $strKey is 'res' or 'resource', returns the resource-reference of the
-	 * image encapsulated by this <tt>Image</tt> object.
+	 * image encapsulated by this <tt>ImageCanvas</tt> object.
 	 * If $strKey is 'width', returns the width of this image.
 	 * If $strKey is 'height', returns the height of this image.
 	 * </p>
@@ -364,37 +364,37 @@ class ImageCanvas {
 	 * 			The particular value.
 	 */
 	public function __get($strKey) {
-		if(!$this->resImage)
+		if(!$this->resImageCanvas)
 			return null;
 		
 		switch($strKey) {
 			case 'res':
 			case 'resource':
-				return $this->resImage;
+				return $this->resImageCanvas;
 				break;
 				
 			case 'width':
-				return imagesx($this->resImage);
+				return imagesx($this->resImageCanvas);
 				break;
 				
 			case 'height':
-				return imagesy($this->resImage);
+				return imagesy($this->resImageCanvas);
 				break;
 				
 			case 'dim':
 			case 'size':
-				return array(imagesx($this->resImage), imagesy($this->resImage));
+				return array(imagesx($this->resImageCanvas), imagesy($this->resImageCanvas));
 				break;
 				
 			case 'ratio':
-				return imagesx($this->resImage) / imagesy($this->resImage);
+				return imagesx($this->resImageCanvas) / imagesy($this->resImageCanvas);
 				break;
 		}
 		
 	}
 	
 	public function __toString() {
-		return '[Object: Image (' . $this->width . 'x' . $this->height . ')]';
+		return '[Object: ImageCanvas (' . $this->width . 'x' . $this->height . ')]';
 	}
 	
 	/**
@@ -452,22 +452,22 @@ class ImageCanvas {
 		$funStore = self::$funStore[$strType];
 		
 		ob_start();
-		if(!@$funStore($this->resImage, null, $strType == self::WBMP ? null : intval($numQuality))) {
+		if(!@$funStore($this->resImageCanvas, null, $strType == self::WBMP ? null : intval($numQuality))) {
 			ob_end_clean();
 			throw new Exception(sprintf(
-				'Image->store(): Failed to create image data, given format [%s]. Original message [%s].',
+				'ImageCanvas->store(): Failed to create image data, given format [%s]. Original message [%s].',
 				$strType,
 				$php_errormsg
 			));
 		}
-		$binImage = ob_get_clean();
+		$binImageCanvas = ob_get_clean();
 		
 		if($objFile) {
 			try {
-				$objFile->write($binImage);
+				$objFile->write($binImageCanvas);
 			} catch(Exception $e) {
 				throw new Exception(sprintf(
-					'Image->store(): Failed to store image data to file, given file [%s], format [%s]. Original message [%s].',
+					'ImageCanvas->store(): Failed to store image data to file, given file [%s], format [%s]. Original message [%s].',
 					$objFile->value,
 					$strType,
 					$e->getMessage()
@@ -476,7 +476,7 @@ class ImageCanvas {
 			return $objFile;
 		}
 		
-		return $binImage;
+		return $binImageCanvas;
 	}
 	
 	public function centerize(array $arrDim) {
@@ -525,12 +525,12 @@ class ImageCanvas {
 	}
 	
 	public function watermark($objWatermark, $intPosition = self::BOTTOMLEFT, $fltSize = 0.5) {
-		if(!$objWatermark instanceof Image) {
+		if(!$objWatermark instanceof ImageCanvas) {
 			$objWatermark = self::createFromFile($objWatermark);
 		}
 		
-		$arrDstSize = Image::ratiofy(
-			Image::scale($this, $fltSize > 0 ? min(1, $fltSize) : 0.5),
+		$arrDstSize = self::ratiofy(
+			self::scale($this, $fltSize > 0 ? min(1, $fltSize) : 0.5),
 			$objWatermark->ratio
 		);
 		if($objWatermark->width < $arrDstSize[0]) { $arrDstSize = $objWatermark->dim; };
@@ -564,7 +564,7 @@ class ImageCanvas {
 	}
 	
 	public function resample(
-			Image $objTarget	= null,
+			ImageCanvas $objTarget	= null,
 			array $arrDstSize	= null,
 			array $arrDstPoint	= null,
 			array $arrSrcSize	= null,
@@ -576,7 +576,7 @@ class ImageCanvas {
 		
 		if(!$this->isValidArea($arrSrcSize, $arrSrcPoint)) {
 			throw new Exception(sprintf(
-				'Image->resample(): #4 $arrSrcSize and #5 $arrSrcPoint must describe a valid area of this image, given size [%s][%s], point [%s][%s]',
+				'ImageCanvas->resample(): #4 $arrSrcSize and #5 $arrSrcPoint must describe a valid area of this image, given size [%s][%s], point [%s][%s]',
 				$arrSrcSize[0],
 				$arrSrcSize[1],
 				$arrSrcPoint[0],
@@ -591,7 +591,7 @@ class ImageCanvas {
 		
 		if(!$objTarget->isValidArea($arrDstSize, $arrDstPoint)) {
 			throw new Exception(sprintf(
-				'Image->resample(): #2 $arrDstSize and #3 $arrDstPoint must describe a valid area of the target image, given size [%s][%s], point [%s][%s]',
+				'ImageCanvas->resample(): #2 $arrDstSize and #3 $arrDstPoint must describe a valid area of the target image, given size [%s][%s], point [%s][%s]',
 				$arrSrcSize[0],
 				$arrSrcSize[1],
 				$arrSrcPoint[0],
@@ -599,7 +599,7 @@ class ImageCanvas {
 			));
 		}
 		
-		if(imageistruecolor($this->resImage)) {
+		if(imageistruecolor($this->resImageCanvas)) {
 			imagealphablending($objTarget->res, $blnAlphaBlending);
 			if(!$blnAlphaBlending) {
 				$intTranspIndex = imagecolorallocatealpha($objTarget->res, 0, 0, 0, 127);
@@ -607,9 +607,9 @@ class ImageCanvas {
 			}
 			imagesavealpha($objTarget->res, true);
 		} else {
-			$intTranspIndex = imagecolortransparent($this->resImage);
-			if ($intTranspIndex >= 0 && $intTranspIndex < imagecolorstotal($this->resImage)) {
-				$arrColor = imagecolorsforindex($this->resImage, $intTranspIndex);
+			$intTranspIndex = imagecolortransparent($this->resImageCanvas);
+			if ($intTranspIndex >= 0 && $intTranspIndex < imagecolorstotal($this->resImageCanvas)) {
+				$arrColor = imagecolorsforindex($this->resImageCanvas, $intTranspIndex);
 				$intTranspIndex = imagecolorallocate($objTarget->res, $arrColor['red'], $arrColor['green'], $arrColor['blue']);
 				imagefill($objTarget->res, 0, 0, $intTranspIndex);
 				imagecolortransparent($objTarget->res, $intTranspIndex);
@@ -621,7 +621,7 @@ class ImageCanvas {
 			 $arrDstSize[0], 'x', $arrDstSize[1], '/',
 			 $arrSrcSize[0], 'x', $arrSrcSize[1], '/';*/
 		
-		imagecopyresampled($objTarget->res, $this->resImage,
+		imagecopyresampled($objTarget->res, $this->resImageCanvas,
 			$arrDstPoint[0], $arrDstPoint[1],
 			$arrSrcPoint[0], $arrSrcPoint[1],
 			$arrDstSize[0], $arrDstSize[1],
@@ -631,11 +631,11 @@ class ImageCanvas {
 	}
 	
 	public static function scale($varDim, $fltScale) {
-		if($varDim instanceof Image) {
+		if($varDim instanceof ImageCanvas) {
 			$varDim = $varDim->dim;
 		} elseif(!is_array($varDim)) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::scale(): #1 $varDim must be an Image object or a 2-element array of numbers, given [%s].',
+				'ImageCanvas::scale(): #1 $varDim must be an ImageCanvas object or a 2-element array of numbers, given [%s].',
 				$varDim
 			));
 		}
@@ -652,16 +652,16 @@ class ImageCanvas {
 		$fltRatio = floatval($fltRatio);
 		if($fltRatio <= 0) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::ratiofy(): #2 $fltRatio must be a positive number, given [%s].',
+				'ImageCanvas::ratiofy(): #2 $fltRatio must be a positive number, given [%s].',
 				$fltRatio
 			));
 		}
 		
-		if($varDim instanceof Image) {
+		if($varDim instanceof ImageCanvas) {
 			$varDim = $varDim->dim;
 		} elseif(!is_array($varDim)) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::ratiofy(): #1 $varDim must be an Image object or a 2-element array of numbers, given [%s].',
+				'ImageCanvas::ratiofy(): #1 $varDim must be an ImageCanvas object or a 2-element array of numbers, given [%s].',
 				$varDim
 			));
 		}
@@ -701,7 +701,7 @@ class ImageCanvas {
 			
 		if(!is_string($varFile)) {
 			throw new InvalidArgumentException(sprintf(
-				'Image::getFile(): #1 $varFile must be a string or a File object, given [%s]',
+				'ImageCanvas::getFile(): #1 $varFile must be a string or a File object, given [%s]',
 				$varFile
 			));
 		}
@@ -715,7 +715,7 @@ class ImageCanvas {
 		
 		if(!$blnIsFile && !$blnCreate) {
 			throw new Exception(sprintf(
-				'Image::getFile(): File [%s] not found. Creation not allowed.',
+				'ImageCanvas::getFile(): File [%s] not found. Creation not allowed.',
 				$varFile
 			));
 		} elseif($blnIsFile && $blnCreate) {
@@ -730,7 +730,7 @@ class ImageCanvas {
 	public static function checkSize($intWidth, $intHeight) {
 		if($intWidth * $intHeight > max(4000000, $GLOBALS['TL_CONFIG']['backboneit_image_maxsize'])) {
 			throw new RuntimeException(sprintf(
-				'Image::checkSize(): Requested size [%s] of image-canvas exceeds max allowed size [%s]. Width given [%s], height given [%s].',
+				'ImageCanvas::checkSize(): Requested size [%s] of image-canvas exceeds max allowed size [%s]. Width given [%s], height given [%s].',
 				$intWidth * $intHeight,
 				max(4000000, $GLOBALS['TL_CONFIG']['backboneit_image_maxsize']),
 				$intWidth,
@@ -743,7 +743,7 @@ class ImageCanvas {
 		$arrSupported = self::getSupportedTypes();
 		if(!$arrSupported[$strType]) {
 			throw new RuntimeException(sprintf(
-				'Image::checkType(): Type [%s] not supported.',
+				'ImageCanvas::checkType(): Type [%s] not supported.',
 				$strType
 			));
 		}
@@ -751,7 +751,7 @@ class ImageCanvas {
 	
 	public static function checkGdLib() {
 		if(!extension_loaded('gd')) {
-			throw new RuntimeException('Image::checkGdLib(): gdlib not loaded.');
+			throw new RuntimeException('ImageCanvas::checkGdLib(): gdlib not loaded.');
 		}
 	}
 	
