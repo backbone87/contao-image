@@ -20,7 +20,7 @@
  * @copyright backboneIT | Oliver Hoff 2010 - Alle Rechte vorbehalten. All rights reserved.
  * @author Oliver Hoff <oliver@hofff.com>
  */
-class Image {
+class ImageCanvas {
 
 	
 	/**
