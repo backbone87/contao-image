@@ -797,3 +797,7 @@ class ImageCanvas {
 	);
 	
 }
+
+if(defined('VERSION') && version_compare(VERSION, '3.0', '<')) {
+	class_alias('ImageCanvas', 'Image');
+}
