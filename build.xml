@@ -23,7 +23,7 @@
 			<fileset dir="TL_ROOT" excludes="**/*.php" />
 		</copy>
 		
-	  	<zip destfile="${build.dir}/backboneit_jwplayer.zip">
+	  	<zip destfile="${build.dir}/backboneit_image.zip">
 	  		<zipfileset dir="${build.dir}/TL_ROOT" />
 	  	</zip>
 	</target>
