@@ -16,5 +16,5 @@
  */
 ClassLoader::addClasses(array
 (
-	'Image' => 'system/modules/backboneit_image/Image.php',
+	'ImageCanvas' => 'system/modules/backboneit_image/ImageCanvas.php',
 ));
