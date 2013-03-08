@@ -342,7 +342,7 @@ class ImageCanvas {
 	
 	protected $resImageCanvas;
 		
-	protected function __construct($resImageCanvas) {
+	public function __construct($resImageCanvas) {
 		$this->resImageCanvas = $resImageCanvas;
 	}
 	
