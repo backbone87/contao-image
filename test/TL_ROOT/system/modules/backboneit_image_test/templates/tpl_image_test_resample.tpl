@@ -6,13 +6,13 @@ function image_test_resample($strFile) {
 	try {
 		echo '<br/><br/><br/><h1>' . $strFile . '</h1>';
 		
-		$objFile = ImageFactory::getFile(IMAGE_TEST_RESAMPLE_DIR . '/' . $strFile);
+		$objFile = CanvasFactory::getFile(IMAGE_TEST_RESAMPLE_DIR . '/' . $strFile);
 		echo '<br/> 1 getFile OK';
 		
-		$objImage = ImageFactory::createFromFile($objFile);
+		$objCanvas = CanvasFactory::createFromFile($objFile);
 		echo '<br/> 2 createFromFile OK';
 		
-		$objOp = new ResampleOperation($objImage);
+		$objOp = new ResampleOp($objCanvas);
 		$objOp->setDstArea(new Size(100, 100));
 		$objOp->execute();
 		
