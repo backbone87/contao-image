@@ -1,0 +1,25 @@
+{
+	"name":"backbone87/backboneit_image",
+	"description":"A wrapper around gd lib for image processing",
+	"keywords":["image", "gdlib", "api", "contao"],
+	"type":"library",
+	"license":"LGPL-3.0+",
+	"authors":[
+		{
+			"name":"Oliver Hoff",
+			"email":"oliver@hofff.com",
+			"homepage":"http://hofff.com/",
+			"role":"Developer"
+		}
+	],
+	"require":{
+		"php":">=5.3"
+	},
+	"autoload":{
+		"psr-0":{"bbit\\image": "src/"}
+	},
+	"extra":{
+		"contao": {
+		}
+	}
+}
