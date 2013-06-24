@@ -143,6 +143,13 @@ abstract class Canvas {
 	}
 
 	/**
+	 * @return \bbit\image\Canvas
+	 */
+	public function fork() {
+		return clone $this;
+	}
+
+	/**
 	 * @return resource<gdimage>
 	 */
 	protected function invalidate() {

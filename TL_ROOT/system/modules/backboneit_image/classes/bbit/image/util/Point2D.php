@@ -112,6 +112,18 @@ class Point2D {
 		return self::create($this->getX() - $point->getX(), $this->getY() - $point->getY());
 	}
 
+	public function max(Point2D $max) {
+		return self::create(max($this->getX(), $max->getX()), max($this->getY(), $max->getY()));
+	}
+
+	public function min(Point2D $min) {
+		return self::create(min($this->getX(), $min->getX()), min($this->getY(), $min->getY()));
+	}
+
+	public function inv() {
+		return self::create(-$this->getX(), -$this->getY());
+	}
+
 	/**
 	 * @return \bbit\image\util\Point2D
 	 */

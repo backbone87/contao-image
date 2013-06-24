@@ -24,7 +24,8 @@ class Size {
 	 * @return \bbit\image\util\Size
 	 */
 	public static function createFromRatioWidth($ratio, $width) {
-		return self::create($width, round(max(0, $ratio) / $width));
+		$ratio = max(0, $ratio);
+		return self::create($width, $ratio == 0 ? 0 : round($width / $ratio));
 	}
 
 	/**
@@ -297,11 +298,13 @@ class Size {
 	 * given outer size, while maintaining the aspect ratio of this size.
 	 *
 	 * @param \bbit\image\util\Size $outer The outer size
+	 * @param boolean $upscale
 	 * @return \bbit\image\util\Size A size, which fits into the given one
 	 */
-	public function scaleToFit(self $outer) {
-		$scale = min(1, $outer->getWidth() / $this->getWidth(), $outer->getHeight() / $this->getHeight());
-		return $scale < 1 ? $this->scale($scale) : $this;
+	public function scaleToFit(self $outer, $upscale = false, &$scale = null) {
+		$scale = 1 / max($this->getWidth() / $outer->getWidth(), $this->getHeight() / $outer->getHeight());
+		$upscale || $scale = min(1, $scale);
+		return $scale != 1 ? $this->scale($scale) : $this;
 	}
 
 
@@ -309,12 +312,14 @@ class Size {
 	 * Returns a size object with a minimal possible area that wraps the given
 	 * inner size, while maintaining the aspect ratio of this size.
 	 *
-	 * @param \bbit\image\util\Size $inner The inner size.
-	 * @return \bbit\image\util\Size A size, which warps $inner.
+	 * @param \bbit\image\util\Size $inner The inner size
+	 * @param boolean $upscale
+	 * @return \bbit\image\util\Size A size, which warps $inner
 	 */
-	public function scaleToWrap(self $inner) {
-		$scale = max(1, $inner->getWidth() / $this->getWidth(), $inner->getHeight() / $this->getHeight());
-		return $scale > 1 ? $this->scale($scale) : $this;
+	public function scaleToWrap(self $inner, $upscale = false, &$scale = null) {
+		$scale = 1 / min($this->getWidth() / $inner->getWidth(), $this->getHeight() / $inner->getHeight());
+		$upscale || $scale = min(1, $scale);
+		return $scale != 1 ? $this->scale($scale) : $this;
 	}
 
 	/**
@@ -355,6 +360,19 @@ class Size {
 		$array = array($this->getWidth(), $this->getHeight());
 		$assoc && $array = array_combine(array('width', 'height'), $array);
 		return $array;
+	}
+
+	/**
+	 * @param \bbit\image\util\Size $size
+	 * @param \bbit\image\util\Point2D $offset
+	 * @return boolean
+	 */
+	public function isIntersectedByArea(self $size, Point2D $offset = null) {
+		$offset || $offset = Point2D::zero();
+		return $offset->getX() < $this->getWidth()
+			&& $offset->getY() < $this->getHeight()
+			&& $offset->getX() > -$size->getWidth()
+			&& $offset->getY() > -$size->getHeight();
 	}
 
 	/**

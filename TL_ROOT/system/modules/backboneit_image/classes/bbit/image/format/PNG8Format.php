@@ -2,6 +2,8 @@
 
 namespace bbit\image\format;
 
+use bbit\image\Canvas;
+
 /**
  * @author Oliver Hoff <oliver@hofff.com>
  */

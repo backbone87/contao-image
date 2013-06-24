@@ -1,14 +1,10 @@
 <?php
 
-namespace bbit\image;
-
-use bbit\image\util\Point2D;
-
-use bbit\image\op\ResampleOp;
-
-use bbit\image\util\Size;
+namespace bbit\image\op;
 
 use bbit\image\Canvas;
+use bbit\image\util\Point2D;
+use bbit\image\util\Size;
 
 class WatermarkOp extends CanvasOp {
 
@@ -47,88 +43,88 @@ class WatermarkOp extends CanvasOp {
 	}
 
 	public function hasPosition($position) {
-		return (bool) ~($this->position ^ ($position & self::POSITION_ALL));
+		return (bool) ($this->position & intval($position));
 	}
 
 	public function setPosition($position) {
-		$this->position = $position;
+		$this->position = intval($position) & self::POSITION_ALL;
 		return $this;
 	}
 
 	public function addPosition($position) {
-		$this->position |= $position & POSITION_ALL;
+		$this->position |= intval($position) & POSITION_ALL;
 		return $this;
 	}
 
 	public function removePosition($position) {
-		$this->position &= ~$position;
+		$this->position &= ~intval($position);
 		return $this;
 	}
 
+	/**
+	 * @return \bbit\image\util\Size
+	 */
 	public function getRefSize() {
 		return $this->refSize;
 	}
 
-	public function setRefSize(Size $size) {
+	public function setRefSize(Size $refSize) {
 		$this->refSize = $refSize;
 		return $this;
 	}
 
-	public function getScaleMode() {
-		return $this->scaleMode;
-	}
-
-	public function setScaleMode($scaleMode) {
-		$this->scaleMode = $scaleMode;
-		return $this;
-	}
-
-	public function perform(Canvas $source) {
-		if(!$this->getPosition() || !$this->getWatermark()) {
-			return;
+	public function execute() {
+		$subject = parent::prepareSubject();
+		$watermark = $this->getWatermark();
+		if(!$this->getPosition() || !$watermark) {
+			return $subject;
 		}
 
+		$subjectSize = $subject->getSize();
+		$watermarkSize = $watermark->getSize();
+		$refSize = $this->getRefSize() ? $this->getRefSize() : $watermarkSize;
+		$refSize->scaleToFit($subjectSize, true, $scale);
+		$targetSize = $watermarkSize->scale($scale);
+
 		$op = new ResampleOp();
+		$op->setSubject($watermark);
 		$op->setAlphaBlending(true);
-		$op->setDst($source);
+		$op->setTarget($subject);
+		$op->setTargetSize($targetSize);
 
-		$target = $source->getSize();
-		$watermark = $this->getWatermark();
-
-		$size = $watermark->getSize()->scaleToFit($target);
-		$op->setDstArea();
-
-		$offset = Point2D::zero();
-
-		for($i = 0; $i < 24; $i++) {
+		for($i = 0; $i < 12; $i++) {
 			$position = 1 << $i;
 			if(!$this->hasPosition($position)) {
 				continue;
 			}
 
+			$targetOffset = Point2D::zero();
+
 			if($position & 0x0111) { // LEFT ALIGN
-				$offset = $offset->setX(0);
+				$targetOffset = $targetOffset->setX(0);
 
 			} elseif($position & 0x0222) { // CENTER ALIGN
-				$offset = $offset->setX(round(($target->getWidth() - $size->getWidth()) / 2));
+				$targetOffset = $targetOffset->setX(round(($subjectSize->getWidth() - $targetSize->getWidth()) / 2));
 
 			} else { // RIGHT ALIGN
-				$offset = $offset->setX($target->getWidth() - $size->getWidth());
+				$targetOffset = $targetOffset->setX($subjectSize->getWidth() - $targetSize->getWidth());
 			}
 
 			if($position & 0x0007) { // TOP ALIGN
-				$offset = $offset->setY(0);
+				$targetOffset = $targetOffset->setY(0);
 
 			} elseif($position & 0x0070) { // MIDDLE ALIGN
-				$offset = $offset->setY(round(($target->getHeight() - $size->getHeight()) / 2));
+				$targetOffset = $targetOffset->setY(round(($subjectSize->getHeight() - $targetSize->getHeight()) / 2));
 
 			} else { // BOTTOM ALIGN
-				$offset = $offset->setY($target->getHeight() - $size->getHeight());
+				$targetOffset = $targetOffset->setY($subjectSize->getHeight() - $targetSize->getHeight());
 			}
 
-			$op->setDstArea($target, $offset);
-			$op->execute($watermark);
+			$op->setTargetOffset($targetOffset);
+			$op->execute();
 		}
+
+		return $subject;
 	}
 
 }

@@ -2,6 +2,9 @@
 
 namespace bbit\image\format;
 
+use bbit\image\Canvas;
+use bbit\image\CanvasFactory;
+
 /**
  * @author Oliver Hoff <oliver@hofff.com>
  */
@@ -21,11 +24,15 @@ abstract class ImageFormat {
 		'wbmp'	=> 'WBMPFormat'
 	);
 
-	public static function autoload($stream, $length = -1, $offset = -1, $ctx = null) {
+	public static function autoload($stream, $length = -1, $offset = 0, $ctx = null) {
 		if(is_resource($stream)) {
 			$data = stream_get_contents($stream, $length, $offset);
 		} else {
-			$data = file_get_contents($stream, false, $ctx, $offset, $length);
+			if($length > -1) {
+				$data = file_get_contents($stream, false, $ctx, $offset, $length);
+			} else {
+				$data = file_get_contents($stream, false, $ctx, $offset);
+			}
 		}
 		return CanvasFactory::createFromResource(imagecreatefromstring($data));
 	}

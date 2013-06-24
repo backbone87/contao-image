@@ -90,7 +90,7 @@ abstract class CanvasFactory {
 			throw new \InvalidArgumentException('#1 $canvas is not a valid gdlib resource.');
 		}
 
-		$strClass = imageistruecolor($canvas) ? 'TrueColorCanvas' : 'PaletteCanvas';
+		$strClass = imageistruecolor($canvas) ? '\bbit\image\TrueColorCanvas' : '\bbit\image\PaletteCanvas';
 
 		return new $strClass($canvas);
 	}

@@ -1,36 +1,49 @@
 <?php
 
-namespace bbit\image\operation;
+namespace bbit\image\op;
 
 use bbit\image\Canvas;
 
 abstract class CanvasOp {
 
-	protected $sourceImmutable;
+	private $subject;
+	private $preserveSubject = false;
 
-	protected function __construct($sourceImmutable = true) {
-		$this->setOriginalImmutable($sourceImmutable);
+	protected function __construct() {
 	}
 
-	public function setSourceImmutable($sourceImmutable) {
-		$this->sourceImmutable = $sourceImmutable;
+	public function getSubject() {
+		return $this->subject;
+	}
+
+	public function setSubject(Canvas $subject) {
+		$this->subject = $subject;
 		return $this;
 	}
 
-	public function isSourceImmutable() {
-		return $this->sourceImmutable;
+	public function shouldPreserveSubject() {
+		return $this->preserveSubject;
 	}
 
-	public function execute(Canvas $src) {
-		$src->requireValid();
-		$this->modifiesSource($src) && $this->sourceImmutable && $src = clone $src;
-		return $src;
+	public function setPreserveSubject($preserveSubject) {
+		$this->preserveSubject = (bool) $preserveSubject;
+		return $this;
 	}
 
-	protected function modifiesSource(Canvas $src) {
+	protected function prepareSubject() {
+		$subject = $this->getSubject();
+		if(!$subject) {
+			throw new \LogicException('No subject canvas set for operation');
+		}
+		$subject->requireValid();
+		$this->shouldPreserveSubject() && $this->isModifyingSubject() && $subject = $subject->fork();
+		return $subject;
+	}
+
+	protected function isModifyingSubject() {
 		return true;
 	}
 
-	protected abstract function perform(Canvas $src);
+	public abstract function execute();
 
 }

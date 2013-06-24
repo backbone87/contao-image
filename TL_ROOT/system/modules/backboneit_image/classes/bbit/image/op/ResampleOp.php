@@ -10,37 +10,69 @@ use bbit\image\util\Size;
 
 class ResampleOp extends CanvasOp {
 
-	protected $dst;
+	private $target;
 
-	protected $dstSize;
+	private $targetSize;
 
-	protected $dstPoint;
+	private $targetOffset;
 
-	protected $srcSize;
+	private $sourceSize;
 
-	protected $srcPoint;
+	private $sourceOffset;
 
-	protected $alphaBlending = false;
+	private $alphaBlending = false;
 
-	public function __construct(Canvas $objOriginal = null, $blnOriginalImmutable = true) {
-		parent::__construct($objOriginal, $blnOriginalImmutable);
+	public function __construct() {
+		parent::__construct();
 	}
 
-	public function setDst(Canvas $dst = null) {
-		$this->dst = $dst;
+	public function getTarget() {
+		return $this->target;
+	}
+
+	public function setTarget(Canvas $target = null) {
+		$this->target = $target;
 		return $this;
 	}
 
-	public function setDstArea(Size $dstSize = null, Point2D $dstPoint = null) {
-		$this->dstSize = $dstSize;
-		$this->dstPoint = $dstPoint;
+	public function getTargetSize() {
+		return $this->targetSize;
+	}
+
+	public function setTargetSize(Size $targetSize = null) {
+		$this->targetSize = $targetSize;
 		return $this;
 	}
 
-	public function setSrcArea(Size $srcSize = null, Point2D $srcPoint = null) {
-		$this->srcSize = $srcSize;
-		$this->srcPoint = $srcPoint;
+	public function getTargetOffset() {
+		return $this->targetOffset;
+	}
+
+	public function setTargetOffset(Point2D $targetOffset = null) {
+		$this->targetOffset = $targetOffset;
 		return $this;
+	}
+
+	public function getSourceSize() {
+		return $this->sourceSize;
+	}
+
+	public function setSourceSize(Size $sourceSize = null) {
+		$this->sourceSize = $sourceSize;
+		return $this;
+	}
+
+	public function getSourceOffset() {
+		return $this->sourceOffset;
+	}
+
+	public function setSourceOffset(Point2D $sourceOffset = null) {
+		$this->sourceOffset = $sourceOffset;
+		return $this;
+	}
+
+	public function getAlphaBlending() {
+		return $this->alphaBlending;
 	}
 
 	public function setAlphaBlending($alphaBlending = false) {
@@ -48,57 +80,59 @@ class ResampleOp extends CanvasOp {
 		return $this;
 	}
 
-	public function isAlphaBlending() {
-		return $this->alphaBlending;
-	}
+	public function execute() {
+		$subject = $this->prepareSubject();
 
-	protected function perform(Canvas $src) {
-		$srcPoint = $this->srcPoint ? $this->srcPoint : Point2D::zero();
-		$srcSize = $this->srcSize ? $this->srcSize : $src->getSize()->toPoint2D()->sub($srcPoint)->toSize();
+		$sourceOffset = $this->getSourceOffset();
+		$sourceOffset || $sourceOffset = Point2D::zero();
+		$sourceSize = $this->getSourceSize();
+		$sourceSize || $sourceSize = $subject->getSize()->toPoint2D()->sub($sourceOffset)->toSize();
 
-		$srcSize->requireNonNullArea();
-		$src->getSize()->requireValidSubArea($srcSize, $srcPoint);
+		$sourceSize->requireNonNullArea();
 
-		$dstPoint = $this->dstPoint ? $this->dstPoint : Point2D::zero();
-		$dstSize = $this->dstSize ? $this->dstSize : $srcSize;
+		$targetOffset = $this->getTargetOffset();
+		$targetOffset || $targetOffset = Point2D::zero();
+		$targetSize = $this->getTargetSize();
+		$targetSize || $targetSize = $sourceSize;
 
-		$dstSize->requireNonNullArea();
+		$targetSize->requireNonNullArea();
 
-		$dst = $this->dst
-			? $this->dst->toTrueColorCanvas()
-			: CanvasFactory::createTrueColorCanvas($dstSize->toPoint2D()->add($dstPoint)->toSize());
+		$target = $this->getTarget();
+		$target || $target = CanvasFactory::createTrueColorCanvas($targetSize->toPoint2D()->add($targetOffset)->toSize());
+		$target = $target->toTrueColorCanvas();
 
-		$dst->getSize()->requireValidSubArea($dstSize, $dstPoint);
+		if(!$target->getSize()->isIntersectedByArea($targetSize, $targetOffset)) {
+			return $target;
+		}
 
-		$dstResource = $dst->getResource();
-		$alphaBlending = $dst->getAlphaBlending();
+		$targetResource = $target->getResource();
+		$alphaBlending = $target->getAlphaBlending();
 
-
-		$dst->setAlphaBlending(true);
-		$br = $dst->getSize()->getBottomRight();
+		$target->setAlphaBlending(true);
+		$br = $target->getSize()->getBottomRight();
 		imagefilledrectangle(
-			$dstResource,
+			$targetResource,
 			0, 0,
 			$br->getX(), $br->getY(),
-			$dst->getColorIndex(Color::create(0, 0, 0, 255))
+			$target->getColorIndex(Color::create(0, 0, 0, 255))
 		);
-		$dst->setAlphaBlending($this->alphaBlending);
 
+		$target->setAlphaBlending($this->getAlphaBlending());
 		imagecopyresampled(
-			$dstResource, $src->getResource(),
-			$dstPoint->getX(), $dstPoint->getY(),
-			$srcPoint->getX(), $srcPoint->getY(),
-			$dstSize->getWidth(), $dstSize->getHeight(),
-			$srcSize->getWidth(), $srcSize->getHeight()
+			$targetResource, $subject->getResource(),
+			$targetOffset->getX(), $targetOffset->getY(),
+			$sourceOffset->getX(), $sourceOffset->getY(),
+			$targetSize->getWidth(), $targetSize->getHeight(),
+			$sourceSize->getWidth(), $sourceSize->getHeight()
 		);
 
-		$dst->setAlphaBlending($alphaBlending);
+		$target->setAlphaBlending($alphaBlending);
 
-		return $dst;
+		return $target;
 	}
 
-	public function modifiesOriginal($src) {
-		return $this->dst && $this->dst->getResource() === $src->getResource();
+	public function isModifyingSubject() {
+		return $this->getTarget() && $this->getTarget()->getResource() === $this->getSubject()->getResource();
 	}
 
 }
