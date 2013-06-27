@@ -55,7 +55,7 @@ abstract class Canvas {
 	 * @return void
 	 */
 	public function __destruct() {
-		$this->resource === null || imagedestroy($this->resource);
+		$this->resource === null || @imagedestroy($this->resource);
 	}
 
 	/**

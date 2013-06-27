@@ -27,11 +27,20 @@ abstract class ImageFormat {
 	public static function autoload($stream, $length = -1, $offset = 0, $ctx = null) {
 		if(is_resource($stream)) {
 			$data = stream_get_contents($stream, $length, $offset);
+			if(!$data) {
+				throw new \RuntimeException('Given stream does not contain any data', 1);
+			}
 		} else {
+			if(!is_file($stream)) {
+				throw new \RuntimeException(sprintf('Given file "%s" does not exists', $stream), 1);
+			}
 			if($length > -1) {
 				$data = file_get_contents($stream, false, $ctx, $offset, $length);
 			} else {
 				$data = file_get_contents($stream, false, $ctx, $offset);
+			}
+			if(!$data) {
+				throw new \RuntimeException(sprintf('Given file "%s" does not contain any data or could not be read', $stream), 1);
 			}
 		}
 		return CanvasFactory::createFromResource(imagecreatefromstring($data));
@@ -72,7 +81,7 @@ abstract class ImageFormat {
 		$data = $this->getBinary($canvas);
 
 		if(!is_resource($stream)) {
-			$stream = fopen($stream, $mode . 'b', null, $ctx);
+			$stream = $ctx === null ? fopen($stream, $mode . 'b') : fopen($stream, $mode . 'b', null, $ctx);
 			$close = true;
 		}
 

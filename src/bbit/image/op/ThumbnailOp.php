@@ -177,4 +177,8 @@ class ThumbnailOp extends CanvasOp {
 		return $op->execute();
 	}
 
+	public function isModifyingSubject() {
+		return false;
+	}
+
 }
