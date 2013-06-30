@@ -90,7 +90,10 @@ class ThumbnailOp extends CanvasOp {
 	const MODE_CROP	= 'crop';
 	const MODE_FILL	= 'fill';
 	const MODE_FIT	= 'fit';
+	const MODE_FIT_UPSCALE = 'fitUpscale';
 
+	/** @var boolean */
+	private $upscale = false;
 	/** @var string */
 	private $mode = self::MODE_CROP;
 	/** @var \bbit\image\util\Size */
@@ -102,6 +105,15 @@ class ThumbnailOp extends CanvasOp {
 
 	public function __construct() {
 		parent::__construct();
+	}
+
+	public function getUpscale() {
+		return $this->upscale;
+	}
+
+	public function setUpscale($upscale) {
+		$this->upscale = (bool) $upscale;
+		return $this;
 	}
 
 	public function getMode() {
@@ -161,6 +173,10 @@ class ThumbnailOp extends CanvasOp {
 				break;
 
 			case self::MODE_FIT:
+				$targetSize = $targetSize->ratiofyDown($sourceSize->getRatio())->scaleToWrap($sourceSize);
+				break;
+
+			case self::MODE_FIT_UPSCALE:
 				$targetSize = $targetSize->ratiofyDown($sourceSize->getRatio());
 				break;
 
