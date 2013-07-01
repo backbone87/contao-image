@@ -94,4 +94,8 @@ class PNGFormat extends ImageFormat {
 		});
 	}
 
+	public function getMIMEType() {
+		return 'image/png';
+	}
+
 }

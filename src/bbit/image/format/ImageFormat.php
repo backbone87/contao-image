@@ -96,7 +96,32 @@ abstract class ImageFormat {
 		return strlen($data);
 	}
 
+	public function getDataURL(Canvas $canvas) {
+		return 'data:' . $this->getMIMEType() . ';base64,' . $this->getBase64Binary($canvas);
+	}
+
+	public function getBase64Binary(Canvas $canvas) {
+		return base64_encode($this->getBinary($canvas));
+	}
+
+	public function sendContentTypeHeader() {
+		header('Content-Type: ' . $this->getMIMEType());
+		return $this;
+	}
+
+	public function send(Canvas $canvas, $exit = true, $header = true) {
+		$header && $this->sendContentTypeHeader();
+		while(ob_end_clean());
+		echo $this->getBinary($canvas);
+		if($exit) {
+			exit;
+		}
+		return $this;
+	}
+
 	public abstract function getBinary(Canvas $canvas);
+
+	public abstract function getMIMEType();
 
 	protected function createBinary(callable $creator, array $args = null) {
 		ob_start();

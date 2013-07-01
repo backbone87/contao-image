@@ -20,4 +20,8 @@ class GIFFormat extends ImageFormat {
 		});
 	}
 
+	public function getMIMEType() {
+		return 'image/gif';
+	}
+
 }

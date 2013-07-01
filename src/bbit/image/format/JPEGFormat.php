@@ -32,4 +32,8 @@ class JPEGFormat extends ImageFormat {
 		});
 	}
 
+	public function getMIMEType() {
+		return 'image/jpeg';
+	}
+
 }

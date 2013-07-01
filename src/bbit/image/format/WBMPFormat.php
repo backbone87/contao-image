@@ -20,4 +20,8 @@ class WBMPFormat extends ImageFormat {
 		});
 	}
 
+	public function getMIMEType() {
+		return 'image/wbmp';
+	}
+
 }
