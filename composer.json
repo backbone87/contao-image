@@ -1,0 +1,37 @@
+{
+	"name": "backboneit/image",
+	"description": "A wrapper around gd lib for image processing",
+	"keywords": [ "image", "gdlib", "api" ],
+	"type": "library",
+	"license": "LGPL-3.0+",
+	"version": "dev-master",
+	"authors": [
+		{
+			"name": "Oliver Hoff",
+			"email": "oliver@hofff.com",
+			"homepage": "http://hofff.com/",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"issues": "https://github.com/backbone87/image/issues",
+		"irc": "irc://irc.freenode.org/contao.dev",
+		"source": "https://github.com/backbone87/image"
+	},
+	"require": {
+		"php": ">=5.3",
+		"contao/core": ">=2.11,<4"
+	},
+	"replace": {
+		"contao-legacy/backboneit_image": "*"
+	},
+	"autoload": {
+	},
+	"extra": {
+		"contao": {
+			"sources": {
+				"TL_ROOT/system/modules/backboneit_image": "system/modules/backboneit_image"
+			}
+		}
+	}
+}
