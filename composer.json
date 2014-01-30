@@ -2,7 +2,7 @@
 	"name": "backboneit/image",
 	"description": "A wrapper around gd lib for image processing",
 	"keywords": [ "image", "gdlib", "api" ],
-	"type": "library",
+	"type": "contao-module",
 	"license": "LGPL-3.0+",
 	"version": "dev-master",
 	"authors": [
