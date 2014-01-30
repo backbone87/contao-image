@@ -4,7 +4,6 @@
 	"keywords": [ "image", "gdlib", "api" ],
 	"type": "contao-module",
 	"license": "LGPL-3.0+",
-	"version": "dev-master",
 	"authors": [
 		{
 			"name": "Oliver Hoff",
