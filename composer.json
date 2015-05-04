@@ -21,8 +21,8 @@
 		"php": ">=5.3"
 	},
 	"replace": {
-		"backbone87/backboneit_image": "*",
-		"contao-legacy/backboneit_image": "*"
+		"backbone87/backboneit_image": "self.version",
+		"contao-legacy/backboneit_image": "self.version"
 	},
 	"autoload": {
 		"psr-0": {
