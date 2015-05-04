@@ -22,7 +22,7 @@
 		"contao/core": ">=2.11,<4"
 	},
 	"replace": {
-		"contao-legacy/backboneit_image": "*"
+		"contao-legacy/backboneit_image": "self.version"
 	},
 	"autoload": {
 	},
