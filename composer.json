@@ -18,7 +18,7 @@
 		"source": "https://github.com/backbone87/image"
 	},
 	"require": {
-		"php": ">=5.3"
+		"php": "^5.6 || ^7.0"
 	},
 	"replace": {
 		"backbone87/backboneit_image": "self.version",
