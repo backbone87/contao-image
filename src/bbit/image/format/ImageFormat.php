@@ -10,18 +10,18 @@ use bbit\image\CanvasFactory;
  */
 abstract class ImageFormat {
 
-	const DEFAULT_FORMAT_CLASS = 'PNGFormat';
+	const DEFAULT_FORMAT_CLASS = PNGFormat::class;
 
 	const MODE_OVERWRITE = 'w';
 	const MODE_CREATE = 'x';
 	const MODE_APPEND = 'a';
 
 	private static $formatClassesByExtension = array(
-		'jpg'	=> 'JPEGFormat',
-		'jpeg'	=> 'JPEGFormat',
-		'gif'	=> 'GIFFormat',
-		'png'	=> 'PNGFormat',
-		'wbmp'	=> 'WBMPFormat'
+		'jpg'	=> JPEGFormat::class,
+		'jpeg'	=> JPEGFormat::class,
+		'gif'	=> GIFFormat::class,
+		'png'	=> PNGFormat::class,
+		'wbmp'	=> WBMPFormat::class,
 	);
 
 	public static function autoload($stream, $length = -1, $offset = 0, $ctx = null) {
@@ -46,8 +46,8 @@ abstract class ImageFormat {
 		return CanvasFactory::createFromResource(imagecreatefromstring($data));
 	}
 
-	public static function autostore(Canvas $canvas, $stream, $length = -1, $offset = -1, $ctx = null, $formatClass = null) {
-		if($formatClass === null && !is_resource($stream)) {
+	public static function autostore(Canvas $canvas, $stream, $ctx = null, $mode = self::MODE_OVERWRITE) {
+		if(!is_resource($stream)) {
 			$pos = strrpos($stream, '.');
 			$pos === false || $formatClass = self::$formatClassesByExtension[substr($stream, $pos + 1)];
 		}
@@ -56,7 +56,7 @@ abstract class ImageFormat {
 		}
 
 		$format = new $formatClass();
-		return $format->store($canvas, $stream, $length, $offset, $ctx);
+		return $format->store($canvas, $stream, $ctx, $mode);
 	}
 
 	public static function registerFormatClass($class, $extensions) {
@@ -87,10 +87,8 @@ abstract class ImageFormat {
 
 		try {
 			fwrite($stream, $data);
-			$close && fclose($stream);
-		} catch(\Exception $e) {
+		} finally {
 			$close && $stream && fclose($stream);
-			throw new \RuntimeException('Failed to write image data to file', 1, $e);
 		}
 
 		return strlen($data);
